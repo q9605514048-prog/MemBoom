@@ -1,0 +1,7 @@
+.remote-auth{z-index:6;background:#080a12df;backdrop-filter:blur(8px)}
+.auth-dialog{width:min(560px,100%)}.auth-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 20px}
+.auth-tabs [aria-pressed="true"]{border-color:var(--color-magic-red);background:#492631}
+.auth-error{color:#ffb3b9;font-size:13px;line-height:1.6;min-height:20px}
+.remote-account-label{color:var(--color-muted);font-size:12px;margin:0 0 20px;overflow-wrap:anywhere}
+.auth-lock-launch{width:100%;margin-top:14px}
+.auth-choice{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:22px 0 8px}

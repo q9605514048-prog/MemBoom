@@ -1,0 +1,9 @@
+<resources>
+    <color name="megumin_background">#101118</color>
+    <color name="megumin_panel">#1A1B26</color>
+    <color name="megumin_panel_strong">#302F3E</color>
+    <color name="megumin_red">#E84855</color>
+    <color name="megumin_gold">#FFC857</color>
+    <color name="megumin_text">#F9EEFA</color>
+    <color name="megumin_muted">#A5A0B1</color>
+</resources>

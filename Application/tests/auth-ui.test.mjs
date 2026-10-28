@@ -1,0 +1,2 @@
+import{test}from'node:test';import assert from'node:assert/strict';import{readFile}from'node:fs/promises';
+test('auth UI exposes only login and password fields',async()=>{const source=await readFile(new URL('../scripts/auth-ui.js',import.meta.url),'utf8');assert.match(source,/name="login"/);assert.match(source,/name="password"/);assert.doesNotMatch(source,/name="email"|code\/request|code\/verify|Gmail/);});
