@@ -1,0 +1,21 @@
+name: Feature request
+description: Suggest something you would like added to MemBoom.
+title: '[Feature] '
+body:
+  - type: markdown
+    attributes:
+      value: "I'm happy to add new features based on your requests. Tell me what you would like to see! Please do not include passwords or personal backups."
+  - type: textarea
+    id: feature
+    attributes:
+      label: What would you like added?
+      placeholder: Describe your idea and which platform it is for.
+    validations:
+      required: true
+  - type: textarea
+    id: benefit
+    attributes:
+      label: How would this help you?
+      placeholder: Describe the problem or the workflow you want to improve.
+    validations:
+      required: true

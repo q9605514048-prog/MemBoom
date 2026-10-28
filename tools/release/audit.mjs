@@ -7,7 +7,7 @@ const problems=[];
 const configPath=resolve('server/.env');
 const serverSecret=existsSync(configPath)?readFileSync(configPath,'utf8').match(/^VAULT_TOKEN=(.+)$/m)?.[1]?.trim():null;
 for(const path of files){
- if(!path.includes('/')&&!['.gitattributes','.gitignore','README.md','SECURITY.md','LICENSE','LICENSE.md','NOTICE','CHANGELOG.md','Запустить сервер.bat'].includes(path))problems.push(path+': unexpected root file; review before publishing');
+ if(!path.includes('/')&&!['.gitattributes','.gitignore','README.md','README.ru.md','SECURITY.md','LICENSE','LICENSE.md','NOTICE','CHANGELOG.md','Запустить сервер.bat'].includes(path))problems.push(path+': unexpected root file; review before publishing');
  if(/(^|\/)(?:node_modules|artifacts|foto|\.gradle-home|\.tools|data)(\/|$)|(^|\/)\.env(?:$|\.(?!example$))|\.(?:jks|keystore|pfx|p12|pem|key)$/i.test(path))problems.push(path+': excluded file type');
  if(statSync(path).size>20*1024*1024)problems.push(path+': unexpectedly large source file');
  if(/\.(?:png|jpg|ico|jar)$/i.test(path))continue;

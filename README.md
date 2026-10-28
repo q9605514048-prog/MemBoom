@@ -1,61 +1,75 @@
 # MemBoom
 
-Тёмное красно-золотое хранилище аккаунтов и заметок. Данные шифруются на устройстве; доступны поиск, генератор паролей, ссылки на файлы Google Диска/Яндекс Диска и зашифрованные резервные копии.
+A dark red-and-gold vault for accounts and notes. Store data locally, keep encrypted backups, and move accounts and notes between the website and Android.
 
-## Попробовать
+[Русская инструкция](README.ru.md)
 
-- **[Открыть сайт](https://q9605514048-prog.github.io/MemBoom/)** — выберите «Попробовать без сервера» и создайте мастер-пароль.
-- **[Скачать APK для Android](https://github.com/q9605514048-prog/MemBoom/releases/latest/download/MemBoom-Android.apk)** — Android 8.0 или новее. После установки выберите «Попробовать без сервера».
-- [Все релизы](https://github.com/q9605514048-prog/MemBoom/releases).
+## Try it
 
-Это тестовая версия. Начните с вымышленных данных. Не теряйте мастер-пароль: восстановление не предусмотрено. Перед обновлениями и очисткой браузера создавайте зашифрованную резервную копию.
+- **[Open the website](https://q9605514048-prog.github.io/MemBoom/)** — choose **Try without a server**, then create a master password.
+- **[Download the Android APK](https://github.com/q9605514048-prog/MemBoom/releases/latest/download/MemBoom-Android.apk)** — Android 8.0 or newer. Choose **Try without a server** after installation.
+- [All releases](https://github.com/q9605514048-prog/MemBoom/releases).
 
-В локальном режиме сервер и регистрация не нужны. На сайте данные привязаны к текущему браузеру и адресу; на телефоне — к установленному приложению. Онлайн-демо не предоставляет общего сервера аккаунтов или автоматической синхронизации.
+The interface supports **English and Russian**. Use the language selector on the website, or **Settings → Language / Язык** on Android. Your choice is remembered. Account names, notes, passwords, and imported content are not translated.
 
-## Возможности
+This is a preview, not an independently audited password manager. Start with fictional data. Lost master passwords cannot be recovered. Export an encrypted backup before clearing browser data, uninstalling the app, or updating.
 
-- Аккаунты с категориями, произвольными полями, избранным и поиском.
-- Отдельные заметки, закрепление и быстрые ссылки на облачные файлы.
-- Шифрованный экспорт и импорт аккаунтов и заметок между сайтом и Android.
-- Подключение собственного сервера для регистрации и ручной синхронизации.
-- Только на сайте: личные списки манги и аниме, статусы, прогресс и импорт. Загрузка обложек требует собственного API.
+## Features
 
-## Запустить свой сервер
+- Accounts with categories, custom fields, favorites, search, and a password generator.
+- Separate notes with pinning, search, and links to Google Drive or Yandex Disk files.
+- Encrypted backup export and import between the website and Android.
+- A local mode that needs no account, registration, or server.
+- Optional registration and manual sync through your own MemBoom server.
+- Website only: manga and anime lists, statuses, progress, and import. Automatic cover loading requires your own API.
 
-Установите Node.js 24, скачайте исходники и выполните из корня:
+Website data belongs to the current browser and origin; Android data belongs to the installed app. The public demo does not provide a shared account server or automatic cross-device sync.
+
+## Feature requests
+
+**Want something added? I'm happy to add new features based on your requests.** [Open a feature request](https://github.com/q9605514048-prog/MemBoom/issues/new?template=feature-request.yml) and tell me what you would like MemBoom to do and how it would help you. Your suggestions will help shape future updates.
+
+For bugs, [open an issue](https://github.com/q9605514048-prog/MemBoom/issues) with the app version and steps to reproduce. Never include real passwords, tokens, or personal backups.
+
+## Run your own server
+
+Install Node.js 24, download the source, and run this from the project root:
 
 ```sh
 node tools/server/start.mjs
 ```
 
-Откройте `http://127.0.0.1:8788/`. На Windows можно запустить `Запустить сервер.bat`. При первом запуске создаётся локальный `server/.env` со случайным секретом. Его и каталог `server/data/` публиковать нельзя; они исключены из Git.
+Open `http://127.0.0.1:8788/`. On Windows, you can use `Запустить сервер.bat`. The first launch creates `server/.env` with a random secret. This file and `server/data/` are private and excluded from Git.
 
-Для подключения других устройств настройте собственный HTTPS-адрес и укажите его в приложении. Домашний адрес разработчика не является общедоступным сервером.
+For other devices, configure your own HTTPS endpoint and enter it in the app. GitHub Pages serves the static website only; it does not run the API.
 
-## Разработка
+## Development
 
-| Папка | Содержимое |
+| Directory | Contents |
 | --- | --- |
-| `Application/` | Сайт без сборщика и внешних JS-зависимостей |
-| `clients/android/` | Android-клиент на Kotlin |
-| `clients/windows/` | Windows-клиент и ядро на .NET |
+| `Application/` | Website without a bundler or external runtime JS dependencies |
+| `clients/android/` | Native Kotlin Android client |
+| `clients/windows/` | Windows client and .NET core |
 | `server/` | Node.js API |
-| `tools/` | Сборка, упаковка и проверки |
+| `locales/` | Shared English interface translations |
+| `tools/` | Build, packaging, and verification scripts |
 
-Проверки сайта и сервера:
+Run website and API checks:
 
 ```sh
+node tools/i18n/build.mjs
 node --test Application/tests/*.test.mjs server/tests/*.test.mjs
 ```
 
-Android: JDK 17, Android SDK 36, затем из `clients/android/`:
+For Android, install JDK 17 and Android SDK 36, then run:
 
 ```sh
+cd clients/android
 ./gradlew testDebugUnitTest assembleDebug
 ```
 
-В Windows используйте `gradlew.bat`. APK появится в `app/build/outputs/apk/debug/`. Не публикуйте ключи подписи. Готовый APK первого релиза — тестовая debug-сборка, не публикация в Google Play.
+On Windows, use `gradlew.bat`. The APK is written to `app/build/outputs/apk/debug/`. The public APK is a debug preview build, not a Google Play release. Signing keys are not included.
 
-Подробнее: [быстрый старт](docs/quickstart.md), [безопасность](SECURITY.md), [Android](clients/android/README.md), [сервер](server/README.md), [Windows](clients/windows/README.md).
+Windows sources are included, but the current Windows client requires your own server. A standalone public Windows release is not included.
 
-Нашли ошибку? [Создайте issue](https://github.com/q9605514048-prog/MemBoom/issues), указав версию и шаги воспроизведения. Не прикладывайте пароли, токены или личные резервные копии.
+See [security notes](SECURITY.md), [Android](clients/android/README.md), and [server setup](server/README.md).

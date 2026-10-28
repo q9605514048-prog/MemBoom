@@ -1,17 +1,18 @@
 /* Plain script: works both over HTTP and when index.html is opened from disk. */
 globalThis.MemBoomNotes = (() => {
+  const tr=(key,...args)=>globalThis.MemBoomI18n?.t(key,...args)??key.replace(/\{(\d+)\}/g,(_,n)=>String(args[+n]??''));
   function link(value){
-    if(!value||typeof value.Name!=='string'||!value.Name.trim()||value.Name.length>160||typeof value.Url!=='string'||value.Url.length>4096)throw Error('Укажи название файла (до 160 символов) и ссылку.');
-    let url;try{url=new URL(value.Url.trim());}catch{throw Error('Проверь ссылку на файл.');}
+    if(!value||typeof value.Name!=='string'||!value.Name.trim()||value.Name.length>160||typeof value.Url!=='string'||value.Url.length>4096)throw Error(tr("Укажи название файла (до 160 символов) и ссылку."));
+    let url;try{url=new URL(value.Url.trim());}catch{throw Error(tr("Проверь ссылку на файл."));}
     const host=url.hostname.toLowerCase();
-    const provider=['drive.google.com','docs.google.com'].includes(host)?'Google Диск':['disk.yandex.ru','disk.yandex.com','yadi.sk'].includes(host)?'Яндекс Диск':null;
-    if(url.protocol!=='https:'||url.username||url.password||url.port||!provider)throw Error('Нужна HTTPS-ссылка на Google Диск или Яндекс Диск.');
+    const provider=['drive.google.com','docs.google.com'].includes(host)?tr("Google Диск"):['disk.yandex.ru','disk.yandex.com','yadi.sk'].includes(host)?tr("Яндекс Диск"):null;
+    if(url.protocol!=='https:'||url.username||url.password||url.port||!provider)throw Error(tr("Нужна HTTPS-ссылка на Google Диск или Яндекс Диск."));
     return {Name:value.Name.trim(),Url:url.href,Provider:provider};
   }
   function links(values){
     if(values===undefined)return [];
-    if(!Array.isArray(values)||values.length>20)throw Error('К заметке можно добавить до 20 ссылок на файлы.');
-    const rows=values.map(link),seen=new Set();for(const row of rows){if(seen.has(row.Url))throw Error('Эта ссылка на файл уже добавлена.');seen.add(row.Url);}return rows;
+    if(!Array.isArray(values)||values.length>20)throw Error(tr("К заметке можно добавить до 20 ссылок на файлы."));
+    const rows=values.map(link),seen=new Set();for(const row of rows){if(seen.has(row.Url))throw Error(tr("Эта ссылка на файл уже добавлена."));seen.add(row.Url);}return rows;
   }
   function validate(notes) {
     if (!Array.isArray(notes)) throw Error('Invalid notes');

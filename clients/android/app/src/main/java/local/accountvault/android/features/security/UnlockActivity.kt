@@ -1,5 +1,7 @@
 package local.accountvault.android.features.security
 
+import local.accountvault.android.ui.I18n
+
 import android.app.Activity
 import android.content.Intent
 import android.graphics.Color
@@ -9,7 +11,7 @@ import local.accountvault.android.*
 import java.util.concurrent.Executors
 import local.accountvault.android.ui.MobileUi
 
-class UnlockActivity : Activity() {
+class UnlockActivity : local.accountvault.android.ui.LanguageActivity() {
     private val worker=Executors.newSingleThreadExecutor()
     override fun onCreate(state: Bundle?) {
         super.onCreate(state)
@@ -27,21 +29,22 @@ class UnlockActivity : Activity() {
         val form=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL;val pad=MobileUi.dp(this,24);setPadding(pad,MobileUi.dp(this,48),pad,pad);setBackgroundColor(Color.parseColor(AndroidThemePolicy.background)) }
         fun label(value: String,size: Float=14f)=TextView(this).apply {text=value;textSize=size;setTextColor(Color.parseColor(AndroidThemePolicy.mutedText));setPadding(0,MobileUi.dp(this,8),0,MobileUi.dp(this,16))}
         form.addView(label("✦  MEMBOOM",12f).apply{setTextColor(Color.parseColor(AndroidThemePolicy.magicGold));letterSpacing=0.12f})
-        form.addView(label(if(stored==null)"Защитите хранилище" else "С возвращением",28f).apply{MobileUi.title(this)})
-        form.addView(label(if(stored==null)"Придумайте пароль от 4 символов: английские буквы, цифры и спецсимволы." else "Введите мастер-пароль, чтобы открыть аккаунты и заметки."))
+        form.addView(I18n.languageButton(this))
+        form.addView(label(if(stored==null)I18n.t("Защитите хранилище") else I18n.t("С возвращением"),28f).apply{MobileUi.title(this)})
+        form.addView(label(if(stored==null)I18n.t("Придумайте пароль от 4 символов: английские буквы, цифры и спецсимволы.") else I18n.t("Введите мастер-пароль, чтобы открыть аккаунты и заметки.")))
         fun makePassword(hintText:String)=EditText(this).apply {hint=hintText;inputType=129;MobileUi.field(this);setSingleLine(true)}
-        val password=makePassword("Мастер-пароль")
-        val confirmation=makePassword("Повторите мастер-пароль")
+        val password=makePassword(I18n.t("Мастер-пароль"))
+        val confirmation=makePassword(I18n.t("Повторите мастер-пароль"))
         form.addView(password)
         if(stored==null)form.addView(confirmation)
         val error=label("")
-        val open=Button(this).apply {text=if(stored==null)"Создать и открыть" else "Открыть хранилище";MobileUi.button(this,true)}
+        val open=Button(this).apply {text=if(stored==null)I18n.t("Создать и открыть") else I18n.t("Открыть хранилище");MobileUi.button(this,true)}
         form.addView(open);form.addView(error)
         open.setOnClickListener {
             val chars=password.text.toString().toCharArray()
-            if(!MasterPasswordSession.isValid(chars)){chars.fill('\u0000');error.text="Пароль: от 4 символов, без пробелов и кириллицы";return@setOnClickListener}
-            if(stored==null&&!chars.contentEquals(confirmation.text.toString().toCharArray())){chars.fill('\u0000');error.text="Пароли не совпадают";return@setOnClickListener}
-            open.isEnabled=false;password.text.clear();confirmation.text.clear();error.text="Открываем…"
+            if(!MasterPasswordSession.isValid(chars)){chars.fill('\u0000');error.text=I18n.t("Пароль: от 4 символов, без пробелов и кириллицы");return@setOnClickListener}
+            if(stored==null&&!chars.contentEquals(confirmation.text.toString().toCharArray())){chars.fill('\u0000');error.text=I18n.t("Пароли не совпадают");return@setOnClickListener}
+            open.isEnabled=false;password.text.clear();confirmation.text.clear();error.text=I18n.t("Открываем…")
             worker.execute {
                 val success=try {
                     val key=QueueKeyStore.getOrCreate()
@@ -55,7 +58,7 @@ class UnlockActivity : Activity() {
                     if(isFinishing||isDestroyed)return@runOnUiThread
                     open.isEnabled=true
                     if(success){AppSession.unlocked=true;startActivity(Intent(this,MainActivity::class.java));finish()}
-                    else error.text="Не удалось открыть хранилище. Проверьте мастер-пароль."
+                    else error.text=I18n.t("Не удалось открыть хранилище. Проверьте мастер-пароль.")
                 }
             }
         }

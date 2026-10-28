@@ -1,4 +1,6 @@
 globalThis.MemBoomLibraryCovers=(()=>{
+const tr=(key,...args)=>globalThis.MemBoomI18n?.t(key,...args)??key.replace(/\{(\d+)\}/g,(_,n)=>String(args[+n]??''));
+
   function create(isUnlocked){
     const cache=new Map();let epoch=0,observer=null,controller=null;
     function cancel(){epoch++;observer?.disconnect();observer=null;controller?.abort();controller=null;}
