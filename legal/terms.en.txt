@@ -1,0 +1,27 @@
+MemBoom — Terms of Use
+
+Version 1.0 · Updated October 28, 2026
+
+1. About the project
+MemBoom is a preview application for keeping accounts, notes, and personal lists. These terms describe the conditions for using the public demo and the distributed apps. Please read them before use. If you do not agree, stop using the project. Questions can be sent to the maintainer through the GitHub repository: https://github.com/q9605514048-prog/MemBoom. Do not post private credentials or backups in public issues.
+
+2. Preview software and permitted use
+The project is provided for personal testing on an “as is” and “as available” basis. It has not undergone an independent security audit. Start with fictional data and do not rely on it as your only copy of important information. Use it lawfully and respect other people's accounts, privacy, and intellectual property. Do not use it to obtain unauthorized access, distribute harmful code, or bypass another service's restrictions.
+
+3. Your content and backups
+Your records remain yours. Adding content does not transfer ownership to the maintainer. Only store or import information that you are entitled to use. Keep encrypted backups and the passwords needed to open them. A lost master password cannot be recovered by the maintainer. Clearing browser storage, uninstalling the app, device failure, or an update can cause data loss. Verify a backup before relying on it.
+
+4. Local storage and remembered entry
+Local vault contents are encrypted on your device. On the website, “Remember sign-in on this device” stores an encrypted unlock secret and a non-exportable browser key in IndexedDB; it may also remember a server session. The password is not stored as plain text, but anyone able to use the same browser profile can open the vault without entering it. This does not protect against malware or hostile scripts running in the same origin. Use this option only on a device you trust. “Lock” clears remembered entry; uncheck the option to use password-based entry again. Private browsing, browser restrictions, or clearing storage can prevent remembered entry.
+
+5. Servers and third-party services
+The public GitHub Pages demo does not provide a shared account or sync server. If you connect a server, the server operator processes your username, account sign-in password, session information, and encrypted vault data. Remote connections require HTTPS. Hosting providers and linked services may receive network information under their own policies. Opening file links or fetching cover images may contact Google Drive, Yandex Disk, ReManga, YummyAnime, or other providers. MemBoom does not upload the linked files or control those services. Their rules and availability remain their responsibility.
+
+6. Availability, responsibility, and mandatory rights
+Features may change, and the demo or downloads may be unavailable. No promise is made that the preview is error-free, uninterrupted, or suitable for a particular purpose. To the extent permitted by applicable law, the maintainer is not responsible for losses resulting from use of the preview, lost passwords, missing backups, or third-party services. Nothing in these terms excludes liability or limits rights that cannot legally be excluded or limited.
+
+7. Project rights and suggestions
+Software and third-party components retain their respective rights and licenses. These terms do not replace third-party licenses or grant rights to other people's content or trademarks. Feature requests are welcome; suggestions do not guarantee an implementation date or continuing support. No payment or purchase is required by these terms.
+
+8. Changes and ending use
+Updates to these terms will carry a new version or date and remain available in the project. Review them when updating. You may stop using MemBoom at any time; export your data first if you want to retain it. Removing local data does not automatically delete data on a separately operated server. The English and Russian texts describe the same project conditions; no country-specific legal compliance is asserted.

@@ -35,6 +35,7 @@
   </section>
   <section id="libraryPanel" hidden="" aria-label="Манга и аниме" data-i18n-aria-label="Манга и аниме"><header class="library-heading"><div><h2 id="libraryTitle" data-i18n="Моё аниме">Моё аниме</h2><p id="librarySubtitle"></p></div><div class="library-toolbar"><button class="btn" id="libraryImport" type="button" data-i18n="↓ Перенести список">↓ Перенести список</button><button class="btn primary" id="libraryAdd" type="button" data-i18n="＋ Тайтл">＋ Тайтл</button></div></header><div class="library-summary" id="librarySummary" aria-label="Статистика коллекции" data-i18n-aria-label="Статистика коллекции"></div><div class="library-filters"><input class="search" id="librarySearch" type="search" placeholder="Найти тайтл или заметку…" aria-label="Поиск в коллекции" data-i18n-placeholder="Найти тайтл или заметку…" data-i18n-aria-label="Поиск в коллекции"><select id="libraryStatus" aria-label="Статус тайтла" data-i18n-aria-label="Статус тайтла"></select><button class="btn" id="libraryFavorite" type="button" aria-pressed="false" data-i18n="☆ Избранное">☆ Избранное</button></div><p class="results-count" id="libraryCount" role="status"></p><div class="library-grid" id="libraryList"></div><p class="hint" data-i18n="Коллекция зашифрована в этом браузере и входит в полную копию сайта. Изменения здесь не меняют списки на ReManga и YummyAnime.">Коллекция зашифрована в этом браузере и входит в полную копию сайта. Изменения здесь не меняют списки на ReManga и YummyAnime.</p></section>
   <p class="footer" data-i18n="Данные хранятся локально в браузере. Экспортируйте резервную копию, чтобы не потерять их.">Данные хранятся локально в браузере. Экспортируйте резервную копию, чтобы не потерять их.</p>
+  <p class="footer"><a href="terms.html" target="_blank" rel="noopener noreferrer" style="color:#ffc857" data-i18n="Пользовательское соглашение">Пользовательское соглашение</a></p>
 </main>
 <div id="modal"></div><div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="overlay" id="lockScreen"><form class="dialog" id="lockForm"><h2 id="lockTitle" data-i18n="Мастер-пароль">Мастер-пароль</h2><p id="lockText" style="color:#69717f;font-size:13px;line-height:1.5" data-i18n="Создайте мастер-пароль минимум из 4 символов. Разрешены Английские буквы, цифры и спецсимволы.">Создайте мастер-пароль минимум из 4 символов. Разрешены Английские буквы, цифры и спецсимволы.</p><div class="form"><label><span data-i18n="Мастер-пароль">Мастер-пароль</span><input id="masterPassword" type="password" minlength="4" pattern="[!-~]{4,}" title="Минимум 4 символа: английские буквы, цифры и спецсимволы, без пробелов" required="" autocomplete="new-password" data-i18n-title="Минимум 4 символа: английские буквы, цифры и спецсимволы, без пробелов"></label></div><div class="dialog-actions"><button class="btn primary" data-i18n="Открыть хранилище">Открыть хранилище</button></div><p id="lockError" style="color:#c85353;font-size:12px;min-height:16px"></p></form></div>
@@ -47,6 +48,7 @@
 <script src="scripts/auth-client.js"></script>
 <script src="scripts/auth-startup.js"></script>
 <script src="scripts/auth-ui.js"></script>
+<script src="scripts/remember-device.js"></script>
 <script>const tr=(key,...args)=>globalThis.MemBoomI18n?.t(key,...args)??key.replace(/\{(\d+)\}/g,(_,n)=>String(args[+n]??''));
 
 (() => {
@@ -57,6 +59,7 @@
   const MASTER_PASSWORD_PATTERN = /^[\x21-\x7E]{4,}$/;
   let masterKey = null;
   let autoLockTimer = null;
+  let rememberedDevice=false,accountNeedsSignIn=false;
   const icons = ['✉','◎','▣','◆','☁','★','⌂','▤'];
   let data = [];
   let notes = [];
@@ -67,7 +70,8 @@
   let writeQueue = Promise.resolve();
   const notesModel = globalThis.MemBoomNotes;
   const remoteAuth=globalThis.MemBoomAuthUI?.mount({onSession:async(_session,password)=>{
-    if(masterKey)return;
+    accountNeedsSignIn=false;
+    if(masterKey){await rememberCurrent();return;}
     try{await unlockWithPassword(password);}catch{toast(tr("Аккаунт открыт. Для прежних локальных записей введите их мастер-пароль."));}
   },onLogout:()=>{if(masterKey)lockApp();}});
   try { data = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { data = []; }
@@ -104,6 +108,25 @@
     });writeQueue=job;return job;
   }
   function readSyncConfig(){try{return JSON.parse(localStorage.getItem(SYNC_CONFIG_KEY)||'null');}catch{return null;}}
+  function rememberPreference(){return localStorage.getItem('memboom.remember.preference')!=='false';}
+  function forgetRemembered(){
+    rememberedDevice=false;localStorage.setItem('memboom.autounlock.blocked','1');
+    globalThis.MemBoomRemember?.clear().catch(()=>{});
+  }
+  async function rememberCurrent(){
+    const choice=document.querySelector('#rememberDevice');
+    const enabled=typeof choice?.checked==='boolean'?choice.checked:rememberPreference();
+    localStorage.setItem('memboom.remember.preference',String(enabled));
+    if(!enabled){forgetRemembered();return;}
+    if(!globalThis.MemBoomRemember)return;
+    const epoch=sessionEpoch,password=masterKey;
+    try{
+      const saved=await MemBoomRemember.save(password,remoteAuth?.session??null);
+      if(saved&&epoch===sessionEpoch&&masterKey===password){rememberedDevice=true;localStorage.removeItem('memboom.autounlock.blocked');clearTimeout(autoLockTimer);}
+    }catch{
+      forgetRemembered();toast(tr('Не удалось запомнить этот браузер. Хранилище сохранено; при следующем входе понадобится пароль.'));
+    }
+  }
   function mergeSyncCategories(local,incoming){
     const merged=JSON.parse(JSON.stringify(local));
     const signature=account=>JSON.stringify((account.fields||[]).map(f=>({label:f.label,value:f.value})));
@@ -120,6 +143,7 @@
   }
   async function syncVault(){
     if(!masterKey)return;
+    if(accountNeedsSignIn&&!remoteAuth?.session){remoteAuth?.open();return;}
     let config=remoteAuth?.session?{endpoint:remoteAuth.session.endpoint,token:remoteAuth.session.token}:readSyncConfig();
     if(!config){
       const endpoint=prompt(tr("Адрес API, например http://127.0.0.1:8787"));
@@ -366,19 +390,30 @@
     }
     const head=e.target.closest('.cat-head');if(head&&!e.target.closest('button'))head.parentElement.classList.toggle('closed');
   });
-  async function unlockWithPassword(password){
+  async function unlockWithPassword(password,{restoring=false,epoch=sessionEpoch}={}){
     if(!MASTER_PASSWORD_PATTERN.test(password))throw Error('invalid password');
     const saved=localStorage.getItem(ENCRYPTED_KEY);
-    if(saved){const restored=notesModel.parse(await decryptLocal(saved,password));data=restored.categories;notes=restored.notes;library=restored.library;}
+    const restored=saved?notesModel.parse(await decryptLocal(saved,password)):null;
+    if(epoch!==sessionEpoch)throw Error('Session changed');
+    if(restored){data=restored.categories;notes=restored.notes;library=restored.library;}
     data=data.map(cat=>({...cat,accounts:(cat.accounts||[]).map(migrateAccount)}));
     masterKey=password;sessionEpoch++;
     if(!saved)await saveEncrypted();
     localStorage.removeItem(KEY);document.querySelector('#lockScreen')?.remove();
     resetAutoLockTimer();render();
+    if(!restoring)await rememberCurrent();
   }
   function attachLockForm(){
     remoteAuth?.attachLockForm();
     const form=document.querySelector('#lockForm');
+    if(!form.querySelector('#rememberDevice')&&document.createElement){
+      const label=document.createElement('label');label.style.cssText='display:flex;align-items:center;gap:9px;margin-top:14px;font-size:13px';
+      const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.id='rememberDevice';checkbox.checked=rememberPreference();
+      checkbox.addEventListener('change',()=>localStorage.setItem('memboom.remember.preference',String(checkbox.checked)));
+      label.append(checkbox,document.createTextNode(tr('Запомнить вход на этом устройстве')));form.append(label);
+      const hint=document.createElement('p');hint.style.cssText='font-size:12px;line-height:1.5;color:#c7aeca';hint.textContent=tr('При повторном открытии пароль не потребуется. Любой, кто пользуется этим профилем браузера, сможет открыть хранилище. Кнопка «Заблокировать» отменяет запоминание.');form.append(hint);
+      const terms=document.createElement('a');terms.href='terms.html';terms.target='_blank';terms.rel='noopener noreferrer';terms.textContent=tr('Пользовательское соглашение');terms.style.color='#ffc857';form.append(terms);
+    }
     form.addEventListener('submit',async event=>{
       event.preventDefault();
       const password=document.querySelector('#masterPassword').value;
@@ -390,8 +425,10 @@
     form.querySelector('#masterPassword').focus();
   }
   function lockApp(){
+    forgetRemembered();
+    sessionEpoch++;
     if(!masterKey)return;
-    masterKey=null;sessionEpoch++;
+    masterKey=null;
     remoteAuth?.clear(true);
     clearTimeout(autoLockTimer);
     autoLockTimer=null;
@@ -403,15 +440,26 @@
     attachLockForm();
   }
   function resetAutoLockTimer(){
-    if(!masterKey)return;
+    if(!masterKey||rememberedDevice)return;
     clearTimeout(autoLockTimer);
     autoLockTimer=setTimeout(lockApp,AUTO_LOCK_MS);
   }
   ['pointerdown','keydown','touchstart'].forEach(eventName=>document.addEventListener(eventName,resetAutoLockTimer,{passive:true}));
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&masterKey)lockApp();});
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&masterKey&&!rememberedDevice)lockApp();});
+  globalThis.addEventListener?.('storage',event=>{if(event.key==='memboom.autounlock.blocked'&&event.newValue==='1')lockApp();});
   document.querySelector('#lockBtn').addEventListener('click',lockApp);
   attachLockForm();
-  remoteAuth?.start();
+  (async()=>{
+    const epoch=sessionEpoch;
+    try{
+      const saved=localStorage.getItem('memboom.autounlock.blocked')==='1'?null:await globalThis.MemBoomRemember?.load();
+      if(saved&&epoch===sessionEpoch&&localStorage.getItem('memboom.autounlock.blocked')!=='1'){
+        await unlockWithPassword(saved.password,{restoring:true,epoch});
+        if(epoch+1===sessionEpoch&&masterKey===saved.password){rememberedDevice=true;clearTimeout(autoLockTimer);accountNeedsSignIn=Boolean(saved.session&&!remoteAuth?.restore?.(saved.session));return;}
+      }
+    }catch{forgetRemembered();}
+    remoteAuth?.start();
+  })();
 })();
 </script>
 

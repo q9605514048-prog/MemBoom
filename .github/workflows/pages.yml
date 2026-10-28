@@ -22,6 +22,7 @@ jobs:
         with:
           node-version: '24'
       - run: node tools/i18n/build.mjs
+      - run: node tools/release/build-terms.mjs
       - run: node --test Application/tests/*.test.mjs server/tests/*.test.mjs
       - run: node tools/release/package-site.mjs
       - uses: actions/configure-pages@v5

@@ -12,6 +12,10 @@ A dark red-and-gold vault for accounts and notes. Store data locally, keep encry
 
 The interface supports **English and Russian**. Use the language selector on the website, or **Settings → Language / Язык** on Android. Your choice is remembered. Account names, notes, passwords, and imported content are not translated.
 
+The website remembers entry by default after a successful unlock. Keep **Remember sign-in on this device** enabled to reopen without a password. **Lock** clears remembered entry; uncheck the option on shared devices. Anyone using the same browser profile can open a remembered vault. Clearing browser data also removes this setting.
+
+Read the [Terms of Use in English and Russian](https://q9605514048-prog.github.io/MemBoom/terms.html). Android includes both texts offline on the welcome screen and in Settings.
+
 This is a preview, not an independently audited password manager. Start with fictional data. Lost master passwords cannot be recovered. Export an encrypted backup before clearing browser data, uninstalling the app, or updating.
 
 ## Features

@@ -232,6 +232,7 @@ class MainActivity : local.accountvault.android.ui.LanguageActivity() {
         val settingsPage = pageContent().apply {
             addView(heading(I18n.t("Настройки"),26f))
             addView(I18n.languageButton(this@MainActivity),LinearLayout.LayoutParams(-1,-2))
+            addView(I18n.termsButton(this@MainActivity),LinearLayout.LayoutParams(-1,-2))
             addView(caption(I18n.t("Ваш аккаунт, резервные копии и защита.")))
             val accountButton=Button(this@MainActivity).apply{text=I18n.t("Управление аккаунтом");applyMeguminButtonStyle();setOnClickListener{accountScreenActive=true;startActivity(Intent(this@MainActivity,AccountActivity::class.java))}}
             val loginLabel=try{AccountAuthStore.load(this@MainActivity)?.login}catch(_:Exception){null}
@@ -249,7 +250,7 @@ class MainActivity : local.accountvault.android.ui.LanguageActivity() {
             addView(Button(this@MainActivity).apply{text=I18n.t("Дополнительные настройки  ＋");MobileUi.quiet(this);setOnClickListener{advanced.visibility=if(advanced.visibility==View.GONE)View.VISIBLE else View.GONE;text=if(advanced.visibility==View.VISIBLE)I18n.t("Дополнительные настройки  −") else I18n.t("Дополнительные настройки  ＋")}},LinearLayout.LayoutParams(-1,-2))
             addView(advanced)
             addView(Button(this@MainActivity).apply{text=I18n.t("Заблокировать хранилище");MobileUi.quiet(this);setTextColor(Color.parseColor(AndroidThemePolicy.magicGold));setOnClickListener{lockVault()}},LinearLayout.LayoutParams(-1,-2))
-            addView(caption("MemBoom 0.9.0 • Android"))
+            addView(caption("MemBoom 0.9.1 • Android"))
         }
         notesPanel=NotesPanel(this,{vault},{persistVaultState(true)},{status.text=it})
         val content = FrameLayout(this).apply {

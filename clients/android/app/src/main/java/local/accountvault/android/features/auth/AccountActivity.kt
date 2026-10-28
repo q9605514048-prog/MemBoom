@@ -36,6 +36,7 @@ class AccountActivity:local.accountvault.android.ui.LanguageActivity(){
         root=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;val pad=MobileUi.dp(this,24);setPadding(pad,MobileUi.dp(this,48),pad,pad);setBackgroundColor(Color.parseColor(AndroidThemePolicy.background))}
         root.addView(label("✦  MEMBOOM").apply{setTextColor(Color.parseColor(AndroidThemePolicy.magicGold));letterSpacing=0.12f;textSize=12f})
         root.addView(I18n.languageButton(this))
+        root.addView(I18n.termsButton(this))
         root.addView(label(if(mode=="welcome")I18n.t("Добро пожаловать в MemBoom") else if(mode=="register")I18n.t("Создать аккаунт") else I18n.t("Войти в MemBoom"),true))
         root.addView(label(if(mode=="welcome")I18n.t("Ваши аккаунты и заметки в одном уютном месте.") else I18n.t("Войдите один раз — приложение запомнит этот телефон.")))
         status=label("")

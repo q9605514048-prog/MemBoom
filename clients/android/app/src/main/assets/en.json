@@ -486,5 +486,9 @@
   "＋ Создать категорию": "＋ Create category",
   "＋ Ссылка": "＋ Link",
   "＋ Ссылка на файл": "＋ File link",
-  "＋ Тайтл": "＋ Title"
+  "＋ Тайтл": "＋ Title",
+  "Пользовательское соглашение": "Terms of use",
+  "Запомнить вход на этом устройстве": "Remember sign-in on this device",
+  "При повторном открытии пароль не потребуется. Любой, кто пользуется этим профилем браузера, сможет открыть хранилище. Кнопка «Заблокировать» отменяет запоминание.": "You will not need a password next time. Anyone using this browser profile can open the vault. Lock clears remembered sign-in.",
+  "Не удалось запомнить этот браузер. Хранилище сохранено; при следующем входе понадобится пароль.": "Could not remember this browser. Your vault is saved; you will need your password next time."
 }

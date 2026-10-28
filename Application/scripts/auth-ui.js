@@ -20,6 +20,7 @@ const tr=(key,...args)=>globalThis.MemBoomI18n?.t(key,...args)??key.replace(/\{(
       const launchHelp=location.protocol==='file:'?`<p class="auth-error">${tr("Сайт открыт с диска. Запустите «Запустить сервер.bat» в папке MemBoom, затем ")}<a href="http://127.0.0.1:8788/" target="_blank" rel="noopener noreferrer">${tr("откройте MemBoom по HTTP")}</a>${tr(". Старые локальные записи остаются в этом браузере.")}</p>`:'';
       overlay.innerHTML=`<form class="dialog auth-dialog" role="dialog" aria-modal="true" aria-labelledby="authHeading"><h2 id="authHeading">${heading}</h2>${launchHelp}${session?profile:welcome}<p class="auth-error" data-error role="alert"></p></form>`;
       document.body.append(overlay);const form=overlay.querySelector('form');
+      if(document.createElement){const terms=document.createElement('a');terms.href='terms.html';terms.target='_blank';terms.rel='noopener noreferrer';terms.textContent=tr('Пользовательское соглашение');terms.style.cssText='display:block;margin:12px 0;color:#ffc857';form.append(terms);}
       if(!session&&mode==='welcome'){
         const local=document.createElement('button');local.type='button';local.className='btn auth-local';local.textContent=tr("Попробовать без сервера");
         local.addEventListener('click',()=>{if(busy)return;preferences?.useLocal();epoch++;overlay?.remove();overlay=null;});
@@ -51,7 +52,10 @@ const tr=(key,...args)=>globalThis.MemBoomI18n?.t(key,...args)??key.replace(/\{(
     function open(){if(!busy){mode=saved?'login':'welcome';draw();}}
     function attachLockForm(){const form=document.querySelector('#lockForm');if(!form)return;let b=document.querySelector('#remoteAccountLockBtn');if(!b){b=document.createElement('button');b.type='button';b.id='remoteAccountLockBtn';b.className='btn auth-lock-launch';form.append(b);}b.onclick=open;update();}
     document.querySelector('#remoteAccountBtn')?.addEventListener('click',open);attachLockForm();update();
-    return {get session(){return session;},clear,open,start(){if(!preferences?.isLocal())open();},attachLockForm};
+    function restore(value){
+      try{if(!value||typeof value.token!=='string'||!/^mbs_[A-Za-z0-9_-]{43}$/.test(value.token)||!value.user?.login||!Number.isFinite(Date.parse(value.expiresAt))||Date.parse(value.expiresAt)<=Date.now())return false;new MemBoomAuth.Client(value.endpoint);session=value;endpoint=value.endpoint;preferences?.remember(session);saved=preferences?.read();update();return true;}catch{return false;}
+    }
+    return {get session(){return session;},clear,open,restore,start(){if(!preferences?.isLocal())open();},attachLockForm};
   }
   return {mount};
 })();
