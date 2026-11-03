@@ -10,7 +10,7 @@ A dark red-and-gold vault for accounts and notes. Store data locally, keep encry
 - **[Download the Android APK](https://github.com/q9605514048-prog/MemBoom/releases/latest/download/MemBoom-Android.apk)** — Android 8.0 or newer. Choose **Try without a server** after installation.
 - [All releases](https://github.com/q9605514048-prog/MemBoom/releases).
 
-The website and Android source now include the Explosion UI redesign. The downloadable Android APK remains v0.9.1 while the original signing key is being recovered; a compatible v0.10.0 update has not been published yet.
+The website and Android source now include the Explosion UI redesign. [Try the separate Android Preview](https://github.com/q9605514048-prog/MemBoom/releases/tag/v0.10.0-preview): it installs alongside the old app. The original signing key is unavailable, so the regular APK remains v0.9.1. Transfer accounts and notes using an encrypted backup; keep the old installation until you have verified the imported data.
 
 The interface supports **English and Russian**. Use the language selector on the website, or **Settings → Language / Язык** on Android. Your choice is remembered. Account names, notes, passwords, and imported content are not translated.
 
