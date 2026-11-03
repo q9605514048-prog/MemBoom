@@ -10,10 +10,14 @@ import java.util.concurrent.TimeUnit
 
 class SyncQueueTest {
     @Test
-    fun meguminThemeUsesDarkMagicalPalette() {
-        assertEquals("#101118", AndroidThemePolicy.background)
-        assertEquals("#E84855", AndroidThemePolicy.magicRed)
-        assertEquals("#FFC857", AndroidThemePolicy.magicGold)
+    fun vaultTextRemainsReadableOnAllSurfaces() {
+        fun luminance(hex:String):Double {
+            val rgb=hex.removePrefix("#").chunked(2).map{it.toInt(16)/255.0}.map{if(it<=0.04045)it/12.92 else Math.pow((it+0.055)/1.055,2.4)}
+            return .2126*rgb[0]+.7152*rgb[1]+.0722*rgb[2]
+        }
+        for(surface in listOf(AndroidThemePolicy.background,AndroidThemePolicy.panel,AndroidThemePolicy.panelStrong))
+            for(text in listOf(AndroidThemePolicy.text,AndroidThemePolicy.mutedText))
+                kotlin.test.assertTrue((luminance(text)+.05)/(luminance(surface)+.05)>=4.5,"Text must meet WCAG AA contrast")
     }
 
     @Test

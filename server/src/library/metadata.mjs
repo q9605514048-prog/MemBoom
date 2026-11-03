@@ -9,7 +9,7 @@ export function titleUrl(value){
   if(!manga&&!anime)throw Error('Unsupported title URL');
   u.hostname=host;u.search='';u.hash='';return {url:u,manga};
 }
-function coverUrl(value){
+export function coverUrl(value){
   const u=new URL(value);
   if(u.protocol!=='https:'||u.username||u.password||u.port||!((['remanga.org','api.remanga.org'].includes(u.hostname)&&u.pathname.startsWith('/media/'))||(u.hostname==='yummyanime.tv'&&/^\/(static\/posters|uploads)\//.test(u.pathname))))throw Error('Unsupported cover');
   if(u.hostname==='yummyanime.tv')u.pathname=u.pathname.replace(/^(\/static\/posters\/)\d+x\d+\//,'$1').replace('/uploads/posts/thumbs/','/uploads/posts/');

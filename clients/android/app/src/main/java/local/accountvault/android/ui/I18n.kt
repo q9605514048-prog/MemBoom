@@ -43,7 +43,7 @@ object I18n {
         text=t("Пользовательское соглашение");MobileUi.quiet(this)
         setOnClickListener{
             val text=activity.assets.open("terms-$language.txt").bufferedReader().use{it.readText()}
-            val body=android.widget.TextView(activity).apply{this.text=text;textSize=14f;setTextColor(android.graphics.Color.parseColor("#F9EEFA"));val pad=MobileUi.dp(this,20);setPadding(pad,pad,pad,pad);setLineSpacing(MobileUi.dp(this,4).toFloat(),1f)}
+            val body=android.widget.TextView(activity).apply{this.text=text;textSize=14f;setTextColor(android.graphics.Color.parseColor(local.accountvault.android.AndroidThemePolicy.text));val pad=MobileUi.dp(this,20);setPadding(pad,pad,pad,pad);setLineSpacing(MobileUi.dp(this,4).toFloat(),1f)}
             AlertDialog.Builder(activity).setTitle(t("Пользовательское соглашение")).setView(android.widget.ScrollView(activity).apply{addView(body)}).setPositiveButton(t("Закрыть"),null).show()
         }
     }

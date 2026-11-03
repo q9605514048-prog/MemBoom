@@ -1,0 +1,10 @@
+{
+  "Источник: {0}": "Source: {0}",
+  "Прогресс: {0} из {1}": "Progress: {0} of {1}",
+  "Импортируй свой список YummyAnime. Статусы и избранное будут перенесены, если они есть в файле. Неизвестный прогресс можно указать позже.": "Import your own YummyAnime list. Statuses and favorites are carried over when included in the file. You can add missing progress later.",
+  "Коллекция зашифрована в этом браузере. Для переноса медиатеки используй полную копию сайта: сетевая синхронизация не переносит мангу и аниме. Списки на исходных сайтах не изменяются.": "Your collection is encrypted in this browser. To move your media library, use a full website backup: network sync does not transfer manga or anime. Lists on the source websites stay unchanged.",
+  "Навигация по инструкции": "Guide navigation",
+  "Установка": "Installation",
+  "Сбор списка": "Collect your list",
+  "«Хентай», «Лецуха», «Много читать» появятся в общем списке статусов манги. Номер последней главы не угадывается. Сверь количество с каждой категорией ReManga: если счётчик меньше, продолжи сбор. Старый файл с «title image» не содержит потерянных названий.": "“Hentai”, “Yuri” and “Long read” appear among the manga statuses. The last chapter number is not guessed. Compare the count with each ReManga category and keep collecting if it is lower. An old file containing “title image” cannot recover missing titles."
+}

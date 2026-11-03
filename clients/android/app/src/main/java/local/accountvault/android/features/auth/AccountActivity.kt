@@ -10,6 +10,7 @@ import android.graphics.Color
 import android.widget.*
 import local.accountvault.android.*
 import local.accountvault.android.ui.MobileUi
+import local.accountvault.android.ui.PasswordControls
 import local.accountvault.android.features.security.*
 import java.util.concurrent.Executors
 
@@ -31,18 +32,15 @@ class AccountActivity:local.accountvault.android.ui.LanguageActivity(){
     private fun label(value:String,title:Boolean=false)=TextView(this).apply{
         text=value;textSize=if(title)28f else 14f;setTextColor(Color.parseColor(AndroidThemePolicy.mutedText));setPadding(0,MobileUi.dp(this,10),0,MobileUi.dp(this,12));if(title)MobileUi.title(this)
     }
-    private fun button(value:String,primary:Boolean=false,action:()->Unit)=Button(this).apply{text=value;MobileUi.button(this,primary);layoutParams=LinearLayout.LayoutParams(-1,-2).apply{topMargin=MobileUi.dp(root,10)};setOnClickListener{if(!busy)action()}}
+    private fun button(value:String,primary:Boolean=false,action:()->Unit)=Button(this).apply{text=value;MobileUi.button(this,primary);layoutParams=LinearLayout.LayoutParams(-1,-2).apply{topMargin=MobileUi.dp(root,12)};setOnClickListener{if(!busy)action()}}
     private fun draw(){
-        root=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;val pad=MobileUi.dp(this,24);setPadding(pad,MobileUi.dp(this,48),pad,pad);setBackgroundColor(Color.parseColor(AndroidThemePolicy.background))}
-        root.addView(label("✦  MEMBOOM").apply{setTextColor(Color.parseColor(AndroidThemePolicy.magicGold));letterSpacing=0.12f;textSize=12f})
-        root.addView(I18n.languageButton(this))
-        root.addView(I18n.termsButton(this))
+        root=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;val pad=MobileUi.dp(this,24);setPadding(pad,MobileUi.dp(this,24),pad,pad);setBackgroundColor(Color.parseColor(AndroidThemePolicy.background))}
+        root.addView(MobileUi.brand(this))
         root.addView(label(if(mode=="welcome")I18n.t("Добро пожаловать в MemBoom") else if(mode=="register")I18n.t("Создать аккаунт") else I18n.t("Войти в MemBoom"),true))
         root.addView(label(if(mode=="welcome")I18n.t("Ваши аккаунты и заметки в одном уютном месте.") else I18n.t("Войдите один раз — приложение запомнит этот телефон.")))
-        status=label("")
+        status=label("").apply{setTextColor(Color.parseColor(AndroidThemePolicy.danger));accessibilityLiveRegion=android.view.View.ACCESSIBILITY_LIVE_REGION_POLITE}
         if(mode=="welcome"){
-            root.addView(button(I18n.t("Создать аккаунт"),true){mode="register";draw()})
-            root.addView(button(I18n.t("Войти")){mode="login";draw()})
+            root.addView(MobileUi.section(this,I18n.t("Серверное хранилище"),I18n.t("Вход и синхронизация через ваш MemBoom API."),button(I18n.t("Создать аккаунт"),true){mode="register";draw()},button(I18n.t("Войти")){mode="login";draw()}))
             root.addView(button(I18n.t("Попробовать без сервера")){
                 try{
                     check(getSharedPreferences("app-security",MODE_PRIVATE).edit().putBoolean("local-mode",true).commit())
@@ -51,13 +49,16 @@ class AccountActivity:local.accountvault.android.ui.LanguageActivity(){
             })
             root.addView(label(I18n.t("Аккаунты и заметки останутся на телефоне. Сервер можно подключить позже.")))
         }else{
+            val credentials=MobileUi.stack(this,16).apply{background=MobileUi.shape(this)}
+            root.addView(credentials)
             fun field(hintValue:String,secret:Boolean=false):EditText=EditText(this).apply{
-                hint=hintValue;inputType=if(secret)129 else android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS;setSingleLine(true);MobileUi.field(this);root.addView(this,LinearLayout.LayoutParams(-1,-2).apply{setMargins(0,MobileUi.dp(this@AccountActivity.root,10),0,MobileUi.dp(this@AccountActivity.root,8))})
+                hint=hintValue;inputType=if(secret)129 else android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS;setSingleLine(true);MobileUi.field(this);credentials.addView(MobileUi.label(this@AccountActivity,hintValue,this));credentials.addView(this,MobileUi.gapParams(this,12))
             }
             val address=field(I18n.t("Адрес сервера MemBoom")).apply{setText(endpoint)}
             val login=field(I18n.t("Логин"))
             val password=field(I18n.t("Пароль"),true)
             val repeat=if(mode=="register")field(I18n.t("Повторите пароль"),true)else null
+            credentials.addView(PasswordControls.reveal(this,password))
             root.addView(button(if(mode=="register")I18n.t("Создать аккаунт") else I18n.t("Войти"),true){
                 if(repeat!=null&&repeat.text.toString()!=password.text.toString()){status.text=I18n.t("Пароли не совпадают");return@button}
                 val action=mode;val value=password.text.toString();val name=login.text.toString();endpoint=address.text.toString().trim()
@@ -84,6 +85,7 @@ class AccountActivity:local.accountvault.android.ui.LanguageActivity(){
             })
         }
         if(!startup)root.addView(button(I18n.t("Закрыть")){finish()})
+        root.addView(MobileUi.section(this,I18n.t("Интерфейс"),"",I18n.languageButton(this),I18n.termsButton(this)))
         setContentView(ScrollView(this).apply{isFillViewport=true;addView(root);MobileUi.keyboardInsets(this)})
     }
     private fun complete(account:AccountSession,password:String){

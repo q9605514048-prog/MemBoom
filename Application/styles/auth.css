@@ -1,7 +1,26 @@
-.remote-auth{z-index:6;background:#080a12df;backdrop-filter:blur(8px)}
-.auth-dialog{width:min(560px,100%)}.auth-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 20px}
-.auth-tabs [aria-pressed="true"]{border-color:var(--color-magic-red);background:#492631}
-.auth-error{color:#ffb3b9;font-size:13px;line-height:1.6;min-height:20px}
-.remote-account-label{color:var(--color-muted);font-size:12px;margin:0 0 20px;overflow-wrap:anywhere}
-.auth-lock-launch{width:100%;margin-top:14px}
-.auth-choice{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:22px 0 8px}
+/* Separate authentication surface; common modal focus/Escape is shell-owned. */
+.overlay.remote-auth{z-index:60;background:var(--color-night);backdrop-filter:none;overflow-y:auto;padding:24px}
+.remote-auth .auth-dialog{position:relative;width:min(520px,100%);max-height:calc(100dvh - 48px);overflow:auto;overscroll-behavior:contain;padding:32px;border:1px solid var(--color-line);border-top:2px solid var(--color-magic-gold);border-radius:24px;background:var(--color-panel);color:var(--color-ink);box-shadow:none}
+.remote-auth .auth-brand{display:flex;align-items:center;gap:16px;margin-bottom:28px;color:var(--color-magic-gold);font-size:20px;font-weight:700;letter-spacing:-.025em}
+.remote-auth .auth-sigil{display:block;width:64px;height:64px;flex:0 0 64px}
+.remote-auth .auth-dialog h2{margin:0 0 12px;font-size:28px;line-height:1.2;letter-spacing:-.025em;text-wrap:balance}
+.remote-auth .auth-dialog .hint{color:var(--color-muted);font-size:14px;line-height:1.7;margin:0 0 24px}
+.remote-auth .auth-dialog .form{display:grid;gap:16px;margin-top:24px}
+.remote-auth .auth-dialog label{display:grid;gap:8px;font-size:14px;color:var(--color-muted);line-height:1.5}
+.remote-auth .auth-dialog input{width:100%;min-width:0;min-height:48px;margin:0;padding:12px 16px;border:1px solid var(--color-line);border-radius:12px;background:var(--color-night);color:var(--color-ink);font:inherit;font-size:16px}
+.remote-auth .auth-dialog .dialog-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:flex-end;margin-top:24px;padding-top:20px;border-top:1px solid var(--color-line)}
+.remote-auth .auth-dialog .btn{min-height:48px;border-radius:12px;font-size:14px;line-height:1.5;white-space:normal}
+.remote-auth .auth-choice{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:24px 0}
+.remote-auth .auth-local{width:100%;margin:8px 0 12px;background:var(--color-night);color:var(--color-ink);border-color:var(--color-line)}
+.remote-auth .auth-dialog .auth-local+.hint{margin:0}
+.remote-auth .auth-terms{display:flex;align-items:center;min-height:44px;margin:8px 0;color:var(--color-magic-gold);font-size:13px;line-height:1.5;text-underline-offset:4px}
+.remote-auth .auth-dialog [aria-busy=true]{cursor:progress}
+.remote-auth .auth-dialog button:disabled{opacity:.6;cursor:progress}
+.remote-auth :is(button,a,input):focus-visible{outline:2px solid var(--color-magic-gold);outline-offset:3px}
+.auth-error{color:var(--danger,#FF929A);font-size:14px;line-height:1.6;min-height:20px;overflow-wrap:anywhere}
+.remote-auth .auth-error:empty{margin:0;min-height:0}
+.remote-auth .auth-error a{color:var(--color-magic-gold);text-underline-offset:4px}
+.remote-account-label{color:var(--color-muted);font-size:13px;margin:0 0 20px;overflow-wrap:anywhere}
+#lockForm .auth-lock-launch{width:100%;min-height:44px;margin-top:16px}
+@media(max-width:600px){.overlay.remote-auth{padding:16px}.remote-auth .auth-dialog{padding:24px;max-height:calc(100dvh - 32px)}.remote-auth .auth-dialog h2{font-size:24px}.remote-auth .auth-brand{margin-bottom:24px}.remote-auth .auth-choice{grid-template-columns:1fr}.remote-auth .dialog-actions .btn{flex:1}}
+@media(prefers-reduced-motion:reduce){.remote-auth,.remote-auth .auth-dialog,.remote-auth .auth-sigil{animation:none;transition:none}}

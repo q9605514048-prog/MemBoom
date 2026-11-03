@@ -1,37 +1,23 @@
-.top { flex-wrap: wrap; align-items: flex-start; }
-.brand { flex: 1 1 280px; min-width: 0; }
-.actions { flex: 1 1 520px; flex-wrap: wrap; justify-content: flex-end; }
-.search { min-width: 0; }
-.view-controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin-bottom: 12px; }
-.view-controls label { display: grid; gap: 6px; flex: 1 1 190px; color: var(--color-muted); font-size: 12px; }
-.view-controls select {
-  width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--color-line);
-  border-radius: 10px; background: #1b1126; color: var(--color-ink); font: inherit; font-size: 14px;
-}
-.view-controls select:focus-visible, .btn:focus-visible, .copy:focus-visible {
-  outline: 2px solid var(--color-magic-gold); outline-offset: 3px;
-}
-.favorites-filter { min-height: 44px; }
-.favorites-filter[aria-pressed="true"] { border-color: var(--color-magic-gold); background: #4a2839; color: var(--color-magic-gold); }
-.favorite-toggle { font-size: 21px; min-width: 36px; min-height: 36px; }
-.favorite-toggle[aria-pressed="true"] { color: var(--color-magic-gold); text-shadow: 0 0 12px #ffc85750; }
-.favorite-toggle:disabled { cursor: progress; opacity: .55; }
-.results-count { color: var(--color-magic-gold); font-size: 12px; margin: 0 0 12px; }
-.empty-state { padding: 38px 20px; text-align: center; border: 1px dashed var(--color-line); border-radius: 16px; background: #20132d80; }
-.empty-symbol { display: block; color: var(--color-magic-gold); font-size: 34px; }
-.empty-state h2 { font-size: 18px; color: #fff4d4; }
-.empty-state p { color: var(--color-muted); font-size: 13px; line-height: 1.6; }
-.account-name, .cat-title { min-width: 0; overflow-wrap: anywhere; }
-.account-top, .cat-head { gap: 10px; }
-.row-actions, .cat-actions { flex-shrink: 0; }
-.dialog { max-height: calc(100dvh - 36px); overflow-y: auto; }
-.toast { max-width: calc(100vw - 32px); text-align: center; }
-@media (max-width: 620px) {
-  .brand, .actions { flex-basis: auto; }
-  .actions { justify-content: flex-start; }
-  .view-controls label { flex-basis: calc(50% - 6px); min-width: 0; }
-  .favorites-filter { width: 100%; }
-  .cat-head { flex-wrap: wrap; }
-  .cat-actions { width: 100%; justify-content: flex-end; }
-  .row-actions .copy { min-width: 36px; min-height: 36px; }
-}
+/* Shared control polish only. Layout/navigation and account presentation are shell-owned. */
+[hidden]{display:none!important}
+.view-controls{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;margin-bottom:12px}
+.view-controls label{display:grid;gap:8px;flex:1 1 192px;min-width:0;color:var(--color-muted);font-size:13px;line-height:1.5}
+.view-controls select{width:100%;min-height:44px;padding:12px;border:1px solid var(--color-line);border-radius:12px;background:var(--color-night);color:var(--color-ink);font:inherit;font-size:14px;color-scheme:dark}
+.view-controls select:focus-visible,.btn:focus-visible,.copy:focus-visible{outline:2px solid var(--color-magic-gold);outline-offset:3px}
+.favorites-filter{min-height:44px}
+.favorites-filter[aria-pressed=true]{border-color:var(--color-magic-gold);color:var(--color-magic-gold);background:var(--color-panel-strong)}
+.favorite-toggle{font-size:22px;min-width:44px;min-height:44px}
+.favorite-toggle[aria-pressed=true]{color:var(--color-magic-gold)}
+.favorite-toggle:disabled{cursor:progress;opacity:.55}
+.results-count{color:var(--color-muted);font-size:13px;line-height:1.5;margin:0 0 12px;font-variant-numeric:tabular-nums}
+.empty-state{padding:40px 24px;border:1px dashed var(--color-line);border-radius:16px;background:var(--color-panel);text-align:center}
+.empty-state .empty-symbol{display:block;margin:0 auto 16px;color:var(--color-magic-gold);font-size:32px}
+.empty-state h2{color:var(--color-ink);font-size:20px;line-height:1.4;margin:0 0 8px}
+.empty-state p{max-width:56ch;margin:0 auto;color:var(--color-muted);font-size:14px;line-height:1.7}
+.dialog{max-height:calc(100dvh - 32px);overflow-y:auto;scrollbar-gutter:stable}
+.toast{max-width:calc(100vw - 32px);text-align:center;overflow-wrap:anywhere}
+@media(max-width:620px){.view-controls label{flex-basis:calc(50% - 8px)}.favorites-filter{width:100%}.empty-state{padding:32px 20px}}
+
+/* Darken the action surface slightly: brand red alone gives white text only 4.32:1. */
+:is(#libraryPanel,#notesPanel,.library-editor,.library-import,.note-editor,.note-reader,.remote-auth) .btn.primary{background:color-mix(in srgb,var(--color-magic-red) 85%,var(--color-night));color:var(--color-ink);border-color:transparent}
+:is(#libraryPanel,#notesPanel,.library-editor,.library-import,.note-editor,.note-reader,.remote-auth) .btn.primary:hover{background:color-mix(in srgb,var(--color-magic-red) 80%,var(--color-night));color:var(--color-ink)}

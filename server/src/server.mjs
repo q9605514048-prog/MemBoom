@@ -5,6 +5,7 @@ import { dirname, resolve,extname,sep } from 'node:path';
 import { pathToFileURL,fileURLToPath } from 'node:url';
 import { Accounts } from './auth/accounts.mjs';
 import {cachedMetadata,titleUrl} from './library/metadata.mjs';
+import {publicProfiles,profileUrl} from './library/yummy-profile.mjs';
 
 const MAX_BODY_BYTES = 1_000_000;
 const FORBIDDEN_KEYS = new Set(['password', 'secret', 'cleartext']);
@@ -68,6 +69,21 @@ export function createServer({ token = process.env.VAULT_TOKEN, initialEnvelope 
       if(!sameOrigin&&!allowedOrigins.includes(origin)){response.writeHead(403,{'content-type':'application/json'});response.end('{"error":"origin_not_allowed"}');return;}
       response.setHeader('access-control-allow-origin',origin);response.setHeader('vary','Origin');
       if(request.method==='OPTIONS'){response.setHeader('access-control-allow-methods','GET, POST, PUT');response.setHeader('access-control-allow-headers','authorization, content-type');response.writeHead(204);response.end();return;}
+    }
+    if(staticDirectory&&request.url.startsWith('/api/library/anime-')&&request.method!=='GET'){
+      response.writeHead(405,{'content-type':'application/json','allow':'GET'});response.end('{"error":"read_only"}');return;
+    }
+    if(staticDirectory&&request.method==='GET'&&request.url==='/api/library/anime-source'){
+      response.writeHead(200,{'content-type':'application/json; charset=utf-8','cache-control':'no-store'});
+      let profile=null;try{profile=profileUrl(process.env.MEMBOOM_ANIME_PROFILE).url;}catch{}
+      response.end(JSON.stringify({profile,intervalSeconds:60}));return;
+    }
+    if(staticDirectory&&request.method==='GET'&&request.url.startsWith('/api/library/anime-profile?')){
+      const headers={'content-type':'application/json; charset=utf-8','cache-control':'no-store'};
+      const value=new URL(request.url,'http://localhost').searchParams.get('url');
+      try{profileUrl(value);}catch{response.writeHead(400,headers);response.end('{"error":"invalid_profile_url"}');return;}
+      try{const profile=await publicProfiles.get(value);response.writeHead(200,headers);response.end(JSON.stringify(profile));}
+      catch{response.writeHead(502,headers);response.end('{"error":"profile_unavailable"}');}return;
     }
     if(staticDirectory&&request.method==='GET'&&request.url.startsWith('/api/library/metadata?')){
       const headers={'content-type':'application/json; charset=utf-8','cache-control':'no-store'};

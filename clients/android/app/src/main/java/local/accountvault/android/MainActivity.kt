@@ -13,6 +13,7 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.view.View
@@ -29,6 +30,7 @@ import local.accountvault.android.features.security.AppSession
 import local.accountvault.android.features.security.UnlockActivity
 import local.accountvault.android.features.notes.NotesPanel
 import local.accountvault.android.ui.MobileUi
+import local.accountvault.android.ui.*
 import local.accountvault.android.features.auth.AccountActivity
 import local.accountvault.android.features.auth.AccountAuthStore
 
@@ -57,6 +59,10 @@ class MainActivity : local.accountvault.android.ui.LanguageActivity() {
     private var accountScreenActive=false
     private var keyboardVisible=false
     private var currentPage=0
+    private var accountFilter=AccountFilter()
+    private lateinit var filterButton:Button
+    private lateinit var syncSummary:TextView
+    private val openScreens=mutableSetOf<ScreenDialog>()
     private var pendingBackupJson: String? = null
     private var pendingBackupPassword: CharArray? = null
     private val lockHandler = android.os.Handler(android.os.Looper.getMainLooper())
@@ -64,6 +70,8 @@ class MainActivity : local.accountvault.android.ui.LanguageActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        accountFilter=AccountFilter(savedInstanceState?.getString("filter-category"),savedInstanceState?.getBoolean("filter-favorites")?:false,
+            AccountSort.entries.getOrElse(savedInstanceState?.getInt("filter-sort")?:0){AccountSort.NAME})
         backupPickerActive=savedInstanceState?.getBoolean("backup-picker-active",false)?:false
         if(!AppSession.unlocked){startActivity(Intent(this,UnlockActivity::class.java));finish();return}
         if(applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE == 0)
@@ -84,7 +92,10 @@ class MainActivity : local.accountvault.android.ui.LanguageActivity() {
             textSize = 13f
             setTextColor(Color.parseColor(AndroidThemePolicy.magicGold))
             setPadding(dp(2), dp(4), dp(2), dp(10))
-            maxLines=3
+            accessibilityLiveRegion=View.ACCESSIBILITY_LIVE_REGION_POLITE
+            maxLines=4
+            background=MobileUi.shape(this)
+            setPadding(dp(12),dp(8),dp(12),dp(8))
             ellipsize=android.text.TextUtils.TruncateAt.END
             addTextChangedListener(object:android.text.TextWatcher{
                 override fun beforeTextChanged(s:CharSequence?,start:Int,count:Int,after:Int){}
@@ -135,6 +146,7 @@ class MainActivity : local.accountvault.android.ui.LanguageActivity() {
                 val category = categoryInput.text.toString().trim()
                 val name = accountInput.text.toString().trim()
                 if (category.isEmpty() || name.isEmpty()) {
+                    if(category.isEmpty()){categoryInput.error=I18n.t("Категория и название обязательны");categoryInput.requestFocus()}else{accountInput.error=I18n.t("Категория и название обязательны");accountInput.requestFocus()}
                     status.text = I18n.t("Укажите категорию и название аккаунта")
                     return@setOnClickListener
                 }
@@ -195,30 +207,18 @@ class MainActivity : local.accountvault.android.ui.LanguageActivity() {
         }
         accountsLayout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         accountsSummary = caption("")
+        filterButton=MobileUi.action(this,I18n.t("Фильтры и сортировка")){showAccountFilters()}
         val accountsPage = pageContent().apply {
             addView(heading(I18n.t("Ваши аккаунты"),26f))
             addView(caption(I18n.t("Логины, пароли и всё, что важно сохранить.")))
             addView(searchInput)
+            addView(filterButton,MobileUi.gapParams(this,4))
             addView(accountsSummary)
             addView(accountsLayout)
         }
-        val showPassword = CheckBox(this).apply {
-            text = I18n.t("Показать пароль")
-            setTextColor(Color.parseColor(AndroidThemePolicy.mutedText))
-            setOnCheckedChangeListener { _, checked ->
-                passwordInput.inputType = android.text.InputType.TYPE_CLASS_TEXT or if (checked)
-                    android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD else android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
-                passwordInput.setSelection(passwordInput.text.length)
-            }
-        }
-        val generatePassword = Button(this).apply {
-            text = I18n.t("Сгенерировать пароль")
-            applyMeguminButtonStyle()
-            setOnClickListener {
-                passwordInput.setText(PasswordGenerator.generate())
-                status.text = I18n.t("Создан пароль из 20 символов: буквы, цифры и спецсимволы.")
-            }
-        }
+        val showPassword=PasswordControls.reveal(this,passwordInput)
+        val generatePassword=MobileUi.action(this,I18n.t("Генератор паролей")){PasswordControls.generator(this,passwordInput)}
+        val copyPassword=MobileUi.action(this,I18n.t("Копировать пароль")){copyValue(I18n.t("Пароль"),passwordInput.text.toString())}
         customFields=FieldsEditorView(this)
         val addPage = pageContent().apply {
             addView(heading(I18n.t("Новый аккаунт"),26f))
@@ -226,31 +226,32 @@ class MainActivity : local.accountvault.android.ui.LanguageActivity() {
             val extra=Button(this@MainActivity).apply{text=I18n.t("Дополнительные поля  ＋");MobileUi.quiet(this);setOnClickListener{customFields.visibility=if(customFields.visibility==View.GONE)View.VISIBLE else View.GONE;text=if(customFields.visibility==View.VISIBLE)I18n.t("Дополнительные поля  −") else I18n.t("Дополнительные поля  ＋")}}
             customFields.visibility=View.GONE
             addView(MobileUi.section(this@MainActivity,I18n.t("Основное"),"",caption(I18n.t("Категория")),categoryInput,caption(I18n.t("Название")),accountInput))
-            addView(MobileUi.section(this@MainActivity,I18n.t("Данные для входа"),"",caption(I18n.t("Почта / логин")),emailInput,caption(I18n.t("Пароль")),passwordInput,showPassword,generatePassword,extra,customFields))
+            addView(MobileUi.section(this@MainActivity,I18n.t("Данные для входа"),"",caption(I18n.t("Почта / логин")),emailInput,caption(I18n.t("Пароль")),passwordInput,showPassword,copyPassword,generatePassword,extra,customFields))
             addView(addButton,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(16)})
         }
+        syncSummary=caption("")
         val settingsPage = pageContent().apply {
-            addView(heading(I18n.t("Настройки"),26f))
-            addView(I18n.languageButton(this@MainActivity),LinearLayout.LayoutParams(-1,-2))
-            addView(I18n.termsButton(this@MainActivity),LinearLayout.LayoutParams(-1,-2))
+            addView(heading(I18n.t("Настройки"),28f))
             addView(caption(I18n.t("Ваш аккаунт, резервные копии и защита.")))
-            val accountButton=Button(this@MainActivity).apply{text=I18n.t("Управление аккаунтом");applyMeguminButtonStyle();setOnClickListener{accountScreenActive=true;startActivity(Intent(this@MainActivity,AccountActivity::class.java))}}
+            val accountButton=MobileUi.action(this@MainActivity,I18n.t("Управление аккаунтом")){accountScreenActive=true;startActivity(Intent(this@MainActivity,AccountActivity::class.java))}
             val loginLabel=try{AccountAuthStore.load(this@MainActivity)?.login}catch(_:Exception){null}
-            addView(MobileUi.section(this@MainActivity,I18n.t("Аккаунт MemBoom"),loginLabel?.let{I18n.t("Вы вошли как {0}", it)}?:I18n.t("Войдите, чтобы подключить сервер."),accountButton))
-            val importButton=Button(this@MainActivity).apply{text=I18n.t("Импорт резервной копии");applyMeguminButtonStyle(true);setOnClickListener{promptBackup(false)}}
-            val exportButton=Button(this@MainActivity).apply{text=I18n.t("Экспорт резервной копии");applyMeguminButtonStyle();setOnClickListener{promptBackup(true)}}
-            addView(MobileUi.section(this@MainActivity,I18n.t("Перенос данных"),I18n.t("Аккаунты и заметки в зашифрованном файле. Импорт сохранит существующие записи."),importButton,exportButton))
-            val downloadButton=Button(this@MainActivity).apply{text=I18n.t("Загрузить с сервера");applyMeguminButtonStyle();setOnClickListener{downloadServerVersion()}}
-            addView(MobileUi.section(this@MainActivity,I18n.t("Синхронизация"),I18n.t("Введите мастер-пароль хранилища сайта. ПК должен быть включён."),masterPasswordInput,syncButton,downloadButton))
-            val advanced=pageContent().apply{
-                addView(caption(I18n.t("Адрес сервера")));addView(endpointInput);addView(caption(I18n.t("Токен устройства")));addView(tokenInput);addView(registerDeviceButton);addView(saveSettingsButton)
-                addView(heading(I18n.t("Конфликты версий"),18f));addView(caption(I18n.t("Выберите версию только после проверки конфликта.")));addView(conflictIdInput);addView(keepLocalButton);addView(acceptServerButton)
-                visibility=View.GONE
-            }
-            addView(Button(this@MainActivity).apply{text=I18n.t("Дополнительные настройки  ＋");MobileUi.quiet(this);setOnClickListener{advanced.visibility=if(advanced.visibility==View.GONE)View.VISIBLE else View.GONE;text=if(advanced.visibility==View.VISIBLE)I18n.t("Дополнительные настройки  −") else I18n.t("Дополнительные настройки  ＋")}},LinearLayout.LayoutParams(-1,-2))
-            addView(advanced)
-            addView(Button(this@MainActivity).apply{text=I18n.t("Заблокировать хранилище");MobileUi.quiet(this);setTextColor(Color.parseColor(AndroidThemePolicy.magicGold));setOnClickListener{lockVault()}},LinearLayout.LayoutParams(-1,-2))
-            addView(caption("MemBoom 0.9.1 • Android"))
+            addView(MobileUi.section(this@MainActivity,I18n.t("Хранилище"),loginLabel?.let{I18n.t("Вы вошли как {0}", it)}?:I18n.t("Локальный режим — записи доступны без интернета."),accountButton))
+            val exportButton=MobileUi.action(this@MainActivity,I18n.t("Создать резервную копию"),true){promptBackup(true)}
+            val importButton=MobileUi.action(this@MainActivity,I18n.t("Импорт резервной копии")){promptBackup(false)}
+            addView(MobileUi.section(this@MainActivity,I18n.t("Резервные копии"),I18n.t("Зашифрованный файл для переноса и восстановления. Импорт добавляет записи, сохраняя существующие."),exportButton,importButton))
+            val downloadButton=MobileUi.action(this@MainActivity,I18n.t("Загрузить с сервера")){downloadServerVersion()}
+            addView(MobileUi.section(this@MainActivity,I18n.t("Синхронизация"),I18n.t("Ручной обмен с MemBoom API. Используйте мастер-пароль серверного хранилища."),syncSummary,MobileUi.label(this@MainActivity,I18n.t("Мастер-пароль для синхронизации"),masterPasswordInput),masterPasswordInput,syncButton,downloadButton))
+            val api=MobileUi.section(this@MainActivity,I18n.t("Подключение API"),I18n.t("Адрес, защищённый токен и регистрация этого телефона."),MobileUi.label(this@MainActivity,I18n.t("Адрес сервера"),endpointInput),endpointInput,MobileUi.label(this@MainActivity,I18n.t("Токен устройства"),tokenInput),tokenInput,registerDeviceButton,saveSettingsButton)
+            api.visibility=View.GONE
+            addView(MobileUi.action(this@MainActivity,I18n.t("Подключение API")){api.visibility=if(api.visibility==View.GONE)View.VISIBLE else View.GONE},MobileUi.gapParams(this))
+            addView(api)
+            val conflicts=MobileUi.section(this@MainActivity,I18n.t("Конфликты версий"),I18n.t("Выберите версию только после проверки конфликта."),MobileUi.label(this@MainActivity,I18n.t("ID конфликта для разрешения"),conflictIdInput),conflictIdInput,keepLocalButton,acceptServerButton)
+            conflicts.visibility=View.GONE
+            addView(MobileUi.action(this@MainActivity,I18n.t("Конфликты версий")){conflicts.visibility=if(conflicts.visibility==View.GONE)View.VISIBLE else View.GONE},MobileUi.gapParams(this))
+            addView(conflicts)
+            addView(MobileUi.section(this@MainActivity,I18n.t("Интерфейс"),"",I18n.languageButton(this@MainActivity)))
+            addView(MobileUi.section(this@MainActivity,I18n.t("Безопасность"),I18n.t("Хранилище блокируется при выходе и после 5 минут бездействия."),MobileUi.action(this@MainActivity,I18n.t("Заблокировать хранилище")){lockVault()}))
+            addView(MobileUi.section(this@MainActivity,I18n.t("О приложении"),"MemBoom ${packageManager.getPackageInfo(packageName,0).versionName} • Android",I18n.termsButton(this@MainActivity)))
         }
         notesPanel=NotesPanel(this,{vault},{persistVaultState(true)},{status.text=it})
         val content = FrameLayout(this).apply {
@@ -284,10 +285,7 @@ class MainActivity : local.accountvault.android.ui.LanguageActivity() {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(16), dp(12), dp(16), dp(12))
             setBackgroundColor(Color.parseColor(AndroidThemePolicy.background))
-            val brand=LinearLayout(this@MainActivity).apply{gravity=android.view.Gravity.CENTER_VERTICAL;setPadding(0,0,0,dp(8))}
-            brand.addView(heading("MemBoom",21f),LinearLayout.LayoutParams(0,-2,1f))
-            brand.addView(caption(I18n.t("✦  Ваше хранилище")).apply{setTextColor(Color.parseColor(AndroidThemePolicy.magicGold));textSize=11f})
-            addView(brand)
+            addView(MobileUi.brand(this@MainActivity))
             addView(status)
             addView(content, LinearLayout.LayoutParams(-1, 0, 1f))
             addView(navigationBar,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
@@ -306,6 +304,7 @@ class MainActivity : local.accountvault.android.ui.LanguageActivity() {
     private fun lockVault(){
         if(isFinishing||isDestroyed)return
         AppSession.unlocked=false
+        closeSensitiveScreens()
         if(::notesPanel.isInitialized)notesPanel.clearSensitive()
         vault=LocalVault()
         pendingBackupPassword?.fill('\u0000');pendingBackupPassword=null
@@ -321,7 +320,7 @@ class MainActivity : local.accountvault.android.ui.LanguageActivity() {
     }
     override fun onStop(){
         lockHandler.removeCallbacks(autoLock)
-        if(!isChangingConfigurations&&!backupPickerActive&&!accountScreenActive){AppSession.unlocked=false;vault=LocalVault();if(::notesPanel.isInitialized)notesPanel.clearSensitive()}
+        if(!isChangingConfigurations&&!backupPickerActive&&!accountScreenActive){AppSession.unlocked=false;closeSensitiveScreens();vault=LocalVault();if(::notesPanel.isInitialized)notesPanel.clearSensitive()}
         super.onStop()
     }
 
@@ -392,6 +391,9 @@ class MainActivity : local.accountvault.android.ui.LanguageActivity() {
     }
     override fun onSaveInstanceState(outState:Bundle){
         outState.putInt("selected-page",currentPage)
+        outState.putString("filter-category",accountFilter.category)
+        outState.putBoolean("filter-favorites",accountFilter.favoritesOnly)
+        outState.putInt("filter-sort",accountFilter.sort.ordinal)
         outState.putBoolean("backup-picker-active",backupPickerActive)
         super.onSaveInstanceState(outState)
     }
@@ -446,7 +448,7 @@ class MainActivity : local.accountvault.android.ui.LanguageActivity() {
     }
 
     private fun caption(value: String) = TextView(this).apply {
-        text = value; textSize = 12f
+        text = value; textSize = 14f
         setTextColor(Color.parseColor(AndroidThemePolicy.mutedText))
         setPadding(0, dp(4), 0, dp(6))
     }
@@ -462,7 +464,8 @@ class MainActivity : local.accountvault.android.ui.LanguageActivity() {
         (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(window.decorView.windowToken, 0)
         pages.forEachIndexed { i, page -> page.visibility = if (i == index) View.VISIBLE else View.GONE }
         if(index==2)notesPanel.refresh()
-        pages[index].apply{animate().cancel();alpha=1f;translationY=0f;if(android.provider.Settings.Global.getFloat(contentResolver,android.provider.Settings.Global.ANIMATOR_DURATION_SCALE,1f)>0f){alpha=0f;translationY=dp(8).toFloat();animate().alpha(1f).translationY(0f).setDuration(180).start()}}
+        if(index==3)refreshSyncSummary()
+        pages[index].apply{animate().cancel();alpha=1f;translationY=0f;if(android.provider.Settings.Global.getFloat(contentResolver,android.provider.Settings.Global.ANIMATOR_DURATION_SCALE,1f)>0f){alpha=0f;translationY=dp(8).toFloat();animate().alpha(1f).translationY(0f).setDuration(AndroidThemePolicy.motionMs).start()}}
         navigation.forEachIndexed { i, button ->
             MobileUi.navigation(button,i,i==index)
         }
@@ -478,114 +481,120 @@ class MainActivity : local.accountvault.android.ui.LanguageActivity() {
 
     private fun refreshAccounts() {
         accountsLayout.removeAllViews()
-        val matches = vault.search(searchInput.text.toString())
-        accountsSummary.text = if(searchInput.text.isNullOrBlank())I18n.t("Записей в хранилище: {0}", vault.accounts.size) else I18n.t("Найдено: {0} из {1}", matches.size, vault.accounts.size)
-        if (matches.isEmpty()) {
-            accountsLayout.addView(heading(if (vault.accounts.isEmpty()) I18n.t("Начните с первого аккаунта") else I18n.t("Ничего не найдено")))
-            accountsLayout.addView(caption(if (vault.accounts.isEmpty()) I18n.t("Добавьте запись — она останется доступна без интернета.") else I18n.t("Попробуйте другое название, категорию или логин.")))
-            accountsLayout.addView(Button(this).apply {
-                text = if (vault.accounts.isEmpty()) I18n.t("Добавить первый аккаунт") else I18n.t("Сбросить поиск")
-                applyMeguminButtonStyle(true)
-                setOnClickListener { if (vault.accounts.isEmpty()) showPage(1) else searchInput.text.clear() }
-            })
+        val matches=accountFilter.apply(vault,searchInput.text.toString())
+        accountsSummary.text=I18n.t("Найдено: {0} из {1}",matches.size,vault.accounts.size)
+        filterButton.text=listOfNotNull(I18n.t("Фильтры и сортировка"),accountFilter.category,if(accountFilter.favoritesOnly)I18n.t("Избранное") else null).joinToString(" · ")
+        if(matches.isEmpty()){
+            val reset=MobileUi.action(this,if(vault.accounts.isEmpty())I18n.t("Добавить первый аккаунт") else I18n.t("Сбросить фильтры"),true){
+                if(vault.accounts.isEmpty())showPage(1)else{accountFilter=AccountFilter();searchInput.text.clear();refreshAccounts()}
+            }
+            accountsLayout.addView(MobileUi.section(this,if(vault.accounts.isEmpty())I18n.t("Начните с первого аккаунта")else I18n.t("Ничего не найдено"),if(vault.accounts.isEmpty())I18n.t("Добавьте запись — она останется доступна без интернета.")else I18n.t("Попробуйте другое название, категорию или логин."),reset))
         }
-        matches.forEach { account ->
-            val card = pageContent().apply {
-                setPadding(dp(14), dp(12), dp(14), dp(12))
-                background = GradientDrawable().apply {
-                    setColor(Color.parseColor(AndroidThemePolicy.panel))
-                    setStroke(dp(1), Color.parseColor(AndroidThemePolicy.panelStrong))
-                    cornerRadius = dp(14).toFloat()
-                }
-            }
-            val accountRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-            val title = TextView(this).apply {
-                text = account.name
-                contentDescription=I18n.t("Открыть аккаунт {0} / {1}", account.category, account.name)
-                textSize = 19f
-                MobileUi.title(this)
-                setPadding(0, dp(8), dp(8), dp(8))
-                setTextColor(Color.parseColor(AndroidThemePolicy.text))
-                setOnClickListener { showEditAccount(account) }
-            }
-            accountRow.addView(title, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-            accountRow.addView(Button(this).apply {
-                text = I18n.t("Удалить")
-                MobileUi.quiet(this)
-                setTextColor(Color.parseColor("#EA8D96"))
-                setOnClickListener {
-                    AlertDialog.Builder(this@MainActivity)
-                        .setTitle(I18n.t("Удалить аккаунт?"))
-                        .setMessage("${account.category} / ${account.name}")
-                        .setNegativeButton(I18n.t("Отмена"), null)
-                        .setPositiveButton(I18n.t("Удалить")) { _, _ ->
-                            try{AccountEntryService(vault,::persistVault).remove(account.id)}
-                            catch(_:Exception){status.text=I18n.t("Не удалось удалить запись. Данные сохранены.");return@setPositiveButton}
-                            enqueueCurrentSnapshot()
-                            refreshAccounts()
-                            status.text = I18n.t("Аккаунт удалён локально")
-                        }
-                        .show()
-                }
-            })
-            card.addView(caption(account.category).apply{textSize=11f;setTextColor(Color.parseColor(AndroidThemePolicy.magicGold));setPadding(0,0,0,dp(2))})
-            card.addView(accountRow)
-            account.fields.forEach { field ->
-                val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-                row.addView(TextView(this).apply {
-                    text = "${field.label}\n${if (field.value.isEmpty()) "Не заполнено" else VaultDisplay.visibleValue(field)}"
-                    setTextColor(Color.parseColor(AndroidThemePolicy.mutedText))
-                    setPadding(0, dp(6), dp(8), dp(6))
-                }, LinearLayout.LayoutParams(0, -2, 1f))
-                row.addView(Button(this).apply {
-                    text = I18n.t("Копировать")
-                    contentDescription = I18n.t("Копировать {0} аккаунта {1}", field.label, account.name)
-                    isEnabled = field.value.isNotEmpty()
-                    MobileUi.quiet(this)
-                    setOnClickListener {
-                        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                        clipboard.setPrimaryClip(ClipData.newPlainText(field.label, field.value))
-                        window.decorView.postDelayed({
-                            val current = clipboard.primaryClip?.getItemAt(0)?.coerceToText(this@MainActivity)?.toString()
-                            if (current == field.value) clipboard.setPrimaryClip(ClipData.newPlainText("MemBoom", ""))
-                        }, ClipboardPolicy.clearDelayMs)
-                        status.text = I18n.t("Скопировано поле: {0}", field.label)
-                    }
-                })
-                card.addView(row)
-            }
-            accountsLayout.addView(card, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
+        matches.forEach{account->
+            val card=MobileUi.stack(this,16)
+            card.addView(caption(account.category).apply{setTextColor(Color.parseColor(AndroidThemePolicy.magicGold));textSize=13f;maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END})
+            val row=LinearLayout(this).apply{gravity=android.view.Gravity.CENTER_VERTICAL}
+            row.addView(heading(account.name,18f).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},LinearLayout.LayoutParams(0,-2,1f))
+            row.addView(MobileUi.text(this,if(account.favorite)"★  ›" else "›",22f).apply{importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO;setTextColor(Color.parseColor(AndroidThemePolicy.magicGold))})
+            card.addView(row)
+            FieldPresentation.loginPreview(account)?.let{card.addView(caption(it).apply{maxLines=1;ellipsize=android.text.TextUtils.TruncateAt.END})}
+            card.contentDescription=I18n.t("Открыть аккаунт {0} / {1}",account.category,account.name)+(if(account.favorite)" · "+I18n.t("Избранное") else "")
+            MobileUi.cardClick(card){showAccountDetails(account)}
+            accountsLayout.addView(card,MobileUi.gapParams(card))
         }
     }
 
-    private fun showEditAccount(account: VaultAccount) {
-        val category = EditText(this).apply { hint=I18n.t("Категория");setText(account.category);applyMeguminFieldStyle() }
-        val name = EditText(this).apply { hint=I18n.t("Название аккаунта");setText(account.name);applyMeguminFieldStyle() }
-        val fieldsEditor=FieldsEditorView(this,account.fields)
-        val form = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            addView(category)
-            addView(name)
-            addView(fieldsEditor)
+    private fun showAccountFilters(){
+        val screen=ScreenDialog(this,I18n.t("Фильтры и сортировка"))
+        val categories=listOf(I18n.t("Все категории"))+vault.accounts.map{it.category}.distinct().sorted()
+        val category=android.widget.Spinner(this).apply{minimumHeight=dp(56);adapter=android.widget.ArrayAdapter(this@MainActivity,android.R.layout.simple_spinner_dropdown_item,categories);setSelection(accountFilter.category?.let{categories.indexOf(it).coerceAtLeast(0)}?:0);contentDescription=I18n.t("Категория")}
+        val favorite=CheckBox(this).apply{text=I18n.t("Только избранное");isChecked=accountFilter.favoritesOnly;MobileUi.check(this)}
+        val order=android.widget.RadioGroup(this)
+        listOf(I18n.t("По названию"),I18n.t("По категории"),I18n.t("Сначала избранное")).forEachIndexed{index,label->order.addView(android.widget.RadioButton(this).apply{id=View.generateViewId();text=label;MobileUi.check(this);isChecked=index==accountFilter.sort.ordinal})}
+        screen.body.addView(heading(I18n.t("Категория")));screen.body.addView(category);screen.body.addView(favorite)
+        screen.body.addView(heading(I18n.t("Сортировка")));screen.body.addView(order)
+        screen.action(I18n.t("Применить"),true){accountFilter=AccountFilter(if(category.selectedItemPosition==0)null else categories[category.selectedItemPosition],favorite.isChecked,AccountSort.entries[order.indexOfChild(order.findViewById(order.checkedRadioButtonId)).coerceAtLeast(0)]);refreshAccounts();screen.dismiss()}
+        screen.action(I18n.t("Сбросить фильтры")){accountFilter=AccountFilter();refreshAccounts();screen.dismiss()}
+        trackScreen(screen)
+    }
+
+    private fun trackScreen(screen:ScreenDialog){openScreens.add(screen);screen.setOnDismissListener{openScreens.remove(screen)};screen.show()}
+    private fun closeSensitiveScreens(){
+        openScreens.toList().forEach{it.dismiss()};openScreens.clear()
+        if(::passwordInput.isInitialized){passwordInput.text.clear();emailInput.text.clear();accountInput.text.clear();masterPasswordInput.text.clear();tokenInput.text.clear();customFields.clearFields()}
+        if(::accountsLayout.isInitialized)accountsLayout.removeAllViews()
+    }
+
+    private fun copyValue(label:String,value:String){
+        ClipboardActions.copy(this,label,value)
+        if(value.isNotEmpty())status.text=I18n.t("Скопировано поле: {0}",label)
+    }
+
+    private fun showAccountDetails(account:VaultAccount){
+        val screen=ScreenDialog(this,I18n.t("Аккаунт"))
+        screen.body.addView(caption(account.category).apply{setTextColor(Color.parseColor(AndroidThemePolicy.magicGold))})
+        screen.body.addView(heading(account.name,28f))
+        screen.body.addView(caption(I18n.t("Секретные значения скрыты. Показывайте их только при необходимости.")))
+        account.fields.forEach{field->
+            val disclosure=FieldDisclosure(field)
+            val value=MobileUi.text(this,if(field.value.isEmpty())I18n.t("Не заполнено")else disclosure.displayValue,16f,true).apply{
+                if(disclosure.secret)typeface=android.graphics.Typeface.MONOSPACE
+                setTextIsSelectable(true);setPadding(0,dp(8),0,dp(12))
+            }
+            val copy=MobileUi.action(this,I18n.t("Копировать")){copyValue(field.label,field.value)}.apply{isEnabled=field.value.isNotEmpty();contentDescription=I18n.t("Копировать {0} аккаунта {1}",field.label,account.name)}
+            val fieldCard=MobileUi.section(this,field.label,"",value,copy)
+            if(disclosure.secret)fieldCard.addView(MobileUi.action(this,I18n.t("Показать значение")){
+                disclosure.toggle();value.text=disclosure.displayValue
+                val button=fieldCard.getChildAt(fieldCard.childCount-1) as Button
+                button.text=if(disclosure.revealed)I18n.t("Скрыть значение")else I18n.t("Показать значение")
+            }.apply{isEnabled=field.value.isNotEmpty()},LinearLayout.LayoutParams(-1,-2))
+            screen.body.addView(fieldCard)
         }
-        val dialog=AlertDialog.Builder(this)
-            .setTitle(I18n.t("Изменить аккаунт"))
-            .setView(ScrollView(this).apply{addView(form)})
-            .setNegativeButton(I18n.t("Отмена"), null)
-            .setPositiveButton(I18n.t("Сохранить"),null).create()
-        dialog.setOnShowListener{dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener{
-                if (category.text.toString().trim().isEmpty() || name.text.toString().trim().isEmpty()) {
-                    name.error = I18n.t("Категория и название обязательны")
-                    return@setOnClickListener
-                }
-                try{AccountEntryService(vault,::persistVault).update(account.id,category.text.toString(),name.text.toString(),fieldsEditor.readFields())}
-                catch(_:Exception){name.error=I18n.t("Не удалось сохранить. Проверьте названия полей.");return@setOnClickListener}
-                enqueueCurrentSnapshot()
-                refreshAccounts()
-                status.text = I18n.t("Аккаунт изменён локально")
-                dialog.dismiss()
-        }}
-        dialog.show()
+        val favorite=MobileUi.action(this,if(account.favorite)I18n.t("Убрать из избранного")else I18n.t("В избранное")){
+            try{AccountFavoriteAction.toggle(vault,account.id,::persistVault);enqueueCurrentSnapshot();refreshAccounts();screen.dismiss();vault.accounts.firstOrNull{it.id==account.id}?.let(::showAccountDetails)}
+            catch(_:Exception){Toast.makeText(this,I18n.t("Не удалось сохранить изменения"),Toast.LENGTH_SHORT).show()}
+        }
+        screen.body.addView(MobileUi.section(this,I18n.t("Действия"),"",favorite,MobileUi.action(this,I18n.t("Удалить аккаунт")){confirmDeleteAccount(account,screen)}.apply{MobileUi.danger(this)}))
+        screen.action(I18n.t("Изменить аккаунт"),true){screen.dismiss();showEditAccount(account)}
+        trackScreen(screen)
+    }
+
+    private fun confirmDeleteAccount(account:VaultAccount,screen:ScreenDialog){
+        AlertDialog.Builder(this).setTitle(I18n.t("Удалить аккаунт?")).setMessage("${account.category} / ${account.name}")
+            .setNegativeButton(I18n.t("Отмена"),null).setPositiveButton(I18n.t("Удалить")){_,_->
+                try{AccountEntryService(vault,::persistVault).remove(account.id);enqueueCurrentSnapshot();refreshAccounts();screen.dismiss();status.text=I18n.t("Аккаунт удалён локально")}
+                catch(_:Exception){Toast.makeText(this,I18n.t("Не удалось удалить запись. Данные сохранены."),Toast.LENGTH_LONG).show()}
+            }.show().getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.parseColor(AndroidThemePolicy.danger))
+    }
+
+    private fun showEditAccount(account: VaultAccount) {
+        val category=EditText(this).apply{hint=I18n.t("Категория");setSingleLine(true);setText(account.category);applyMeguminFieldStyle()}
+        val name=EditText(this).apply{hint=I18n.t("Название аккаунта");setSingleLine(true);setText(account.name);applyMeguminFieldStyle()}
+        val fieldsEditor=FieldsEditorView(this,account.fields)
+        val screen=ScreenDialog(this,I18n.t("Изменить аккаунт"))
+        screen.body.addView(MobileUi.section(this,I18n.t("Основное"),"",MobileUi.label(this,I18n.t("Категория"),category),category,MobileUi.label(this,I18n.t("Название"),name),name))
+        screen.body.addView(heading(I18n.t("Поля аккаунта")))
+        screen.body.addView(fieldsEditor)
+        screen.onBack={
+            if(category.text.toString()!=account.category||name.text.toString()!=account.name||fieldsEditor.dirty())AlertDialog.Builder(this).setTitle(I18n.t("Закрыть без сохранения?")).setNegativeButton(I18n.t("Продолжить редактирование"),null).setPositiveButton(I18n.t("Закрыть")){_,_->screen.dismiss()}.show()else screen.dismiss()
+        }
+        screen.action(I18n.t("Сохранить"),true){
+            if(category.text.isBlank()||name.text.isBlank()){name.error=I18n.t("Категория и название обязательны");return@action}
+            try{AccountEntryService(vault,::persistVault).update(account.id,category.text.toString(),name.text.toString(),fieldsEditor.readFields())}
+            catch(_:Exception){name.error=I18n.t("Не удалось сохранить. Проверьте названия полей.");return@action}
+            enqueueCurrentSnapshot();refreshAccounts();status.text=I18n.t("Аккаунт изменён локально");screen.dismiss()
+            vault.accounts.firstOrNull{it.id==account.id}?.let(::showAccountDetails)
+        }
+        trackScreen(screen)
+    }
+
+    private fun refreshSyncSummary(){
+        val dirty=getPreferences(MODE_PRIVATE).getBoolean("local-changes",false)
+        syncSummary.text=when{
+            queue.size()>0->I18n.t("Ожидает синхронизации: {0}",queue.size())
+            dirty->I18n.t("Есть локальные изменения. Запустите синхронизацию вручную.")
+            else->I18n.t("Состояние сервера проверяется при ручной синхронизации.")
+        }
     }
 
     private fun refreshStatus() {
@@ -816,6 +825,7 @@ class MainActivity : local.accountvault.android.ui.LanguageActivity() {
 
     override fun onDestroy() {
         lockHandler.removeCallbacks(autoLock)
+        openScreens.toList().forEach{it.dismiss()}
         pendingBackupPassword?.fill('\u0000')
         syncExecutor.shutdownNow()
         super.onDestroy()

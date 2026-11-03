@@ -8,6 +8,7 @@ const script = html.slice(scriptStart, html.indexOf('</script>',scriptStart));
 const notesSource=await readFile(new URL('../../scripts/notes-model.js',import.meta.url),'utf8');
 const noteLinksSource=await readFile(new URL('../../scripts/note-links.js',import.meta.url),'utf8');
 const librarySource=await readFile(new URL('../../scripts/library/model.js',import.meta.url),'utf8');
+const presentationSource=await readFile(new URL('../../scripts/ui/vault-presentation.js',import.meta.url),'utf8');
 
 function element() {
   return { value: '', innerHTML: '', textContent: '', listeners: {}, attributes: {}, classList: { add() {}, remove() {}, toggle() {} },
@@ -39,7 +40,7 @@ export async function openVault(storage = new Map(),environment = {}) {
     FormData: class { constructor() { return [[name.name, name.value]][Symbol.iterator](); } },
     confirm:()=>true,...environment
   });
-  vm.runInContext(librarySource,context);vm.runInContext(notesSource,context);vm.runInContext(noteLinksSource,context);
+  vm.runInContext(librarySource,context);vm.runInContext(notesSource,context);vm.runInContext(noteLinksSource,context);vm.runInContext(presentationSource,context);
   context.MemBoomNoteLinks.createEditor=(_form,initial)=>{get('form:links').value=JSON.stringify(initial);return {read:()=>context.MemBoomNotes.links(JSON.parse(get('form:links').value)),dirty:()=>get('form:links').value!==JSON.stringify(initial)};};
   vm.runInContext(script,context);
   get('#masterPassword').value = 'test!123';

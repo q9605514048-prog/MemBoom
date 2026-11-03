@@ -11,7 +11,7 @@ globalThis.MemBoomI18n=(()=>{
     const picker=document.createElement('select');picker.id='languagePicker';picker.setAttribute('aria-label',language==='en'?'Language':'Язык');
     for(const [value,label] of [['ru','Русский'],['en','English']]){const option=document.createElement('option');option.value=value;option.textContent=label;picker.append(option);}
     picker.value=language;picker.addEventListener('change',()=>select(picker.value));
-    picker.style.cssText='position:fixed;right:12px;top:8px;z-index:20;background:#24172f;color:#fff4d4;border:1px solid #ffc85788;border-radius:9px;padding:6px 9px;font:13px system-ui;max-width:130px';document.body.append(picker);
+    picker.className='language-picker outside-shell';document.body.append(picker);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
   return {t,language,select};

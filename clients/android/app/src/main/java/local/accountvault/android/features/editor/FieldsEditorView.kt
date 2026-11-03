@@ -1,39 +1,66 @@
 package local.accountvault.android.features.editor
 
-import local.accountvault.android.ui.I18n
-
+import android.app.Activity
 import android.content.Context
-import android.graphics.Color
+import android.graphics.Typeface
+import android.text.Editable
+import android.text.TextWatcher
 import android.widget.*
-import local.accountvault.android.AndroidThemePolicy
 import local.accountvault.android.VaultField
-import local.accountvault.android.ui.MobileUi
+import local.accountvault.android.ui.*
 
-class FieldsEditorView(context: Context,initial:List<VaultField> = emptyList()):LinearLayout(context) {
-    private data class Row(val container:LinearLayout,val label:EditText,val value:EditText)
-    private val rows=mutableListOf<Row>()
-    private val holder=LinearLayout(context).apply{orientation=VERTICAL}
+class FieldsEditorView(context: Context, private val initial: List<VaultField> = emptyList()) : LinearLayout(context) {
+    private data class Row(val container: LinearLayout, val label: EditText, val value: EditText)
+    private val rows = mutableListOf<Row>()
+    private val holder = MobileUi.stack(context)
     init {
-        orientation=VERTICAL
+        orientation = VERTICAL
         addView(holder)
-        addView(Button(context).apply{text=I18n.t("Добавить поле");MobileUi.button(this);setOnClickListener{append(VaultField("",""))}},LayoutParams(-1,-2))
+        addView(MobileUi.action(context, I18n.t("Добавить поле")) { append(VaultField("", "")) }, LayoutParams(-1, -2))
         initial.forEach(::append)
     }
-    private fun append(field:VaultField){
-        fun input(h:String,v:String)=EditText(context).apply{hint=h;setText(v);MobileUi.field(this);layoutParams=LayoutParams(-1,-2).apply{bottomMargin=MobileUi.dp(this@FieldsEditorView,8)}}
-        val label=input(I18n.t("Название поля"),field.label)
-        val value=input(I18n.t("Значение"),field.value)
-        val row=LinearLayout(context).apply{orientation=VERTICAL;val pad=MobileUi.dp(this,10);setPadding(pad,pad,pad,pad);background=MobileUi.shape(this)}
-        val entry=Row(row,label,value)
-        val secret=listOf("парол","password","secret","token","ключ","key").any{field.label.lowercase().contains(it)}
-        if(secret){value.inputType=129;row.addView(CheckBox(context).apply{text=I18n.t("Показать значение");setTextColor(Color.parseColor(AndroidThemePolicy.mutedText));setOnCheckedChangeListener{_,checked->value.inputType=if(checked)145 else 129}})}
-        row.addView(label);row.addView(value)
-        row.addView(Button(context).apply{text=I18n.t("Удалить поле");MobileUi.quiet(this);setTextColor(Color.parseColor("#EA8D96"));setOnClickListener{rows.remove(entry);holder.removeView(row)}},LayoutParams(-1,-2))
-        rows.add(entry);holder.addView(row,LayoutParams(-1,-2).apply{bottomMargin=MobileUi.dp(this@FieldsEditorView,10)})
+    private fun append(field: VaultField) {
+        val label = EditText(context).apply { hint = I18n.t("Название поля"); setText(field.label); setSingleLine(true); MobileUi.field(this) }
+        val value = EditText(context).apply { hint = I18n.t("Значение"); setText(field.value); MobileUi.field(this) }
+        val row = MobileUi.stack(context, 16).apply { background = MobileUi.shape(this) }
+        val entry = Row(row, label, value)
+        val reveal = CheckBox(context).apply {
+            text = I18n.t("Показать значение"); MobileUi.check(this)
+            setOnCheckedChangeListener { _, visible ->
+                value.transformationMethod = if (visible) null else android.text.method.PasswordTransformationMethod.getInstance()
+                value.typeface = Typeface.MONOSPACE
+            }
+        }
+        val generator = MobileUi.action(context, I18n.t("Генератор паролей")) { (context as? Activity)?.let { PasswordControls.generator(it, value) } }
+        fun updateSecret() {
+            val secret = FieldPresentation.isSecret(label.text.toString())
+            reveal.isChecked = false
+            reveal.visibility = if (secret) VISIBLE else GONE
+            generator.visibility = if (secret) VISIBLE else GONE
+            value.inputType = if (secret) 129 else android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            value.transformationMethod = if (secret) android.text.method.PasswordTransformationMethod.getInstance() else null
+            value.typeface = if (secret) Typeface.MONOSPACE else Typeface.create("sans-serif", Typeface.NORMAL)
+        }
+        label.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) { updateSecret() }
+            override fun afterTextChanged(s: Editable?) = Unit
+        })
+        updateSecret()
+        row.addView(MobileUi.label(context, I18n.t("Название поля"), label)); row.addView(label, MobileUi.gapParams(row, 8))
+        row.addView(MobileUi.label(context, I18n.t("Значение"), value)); row.addView(value, MobileUi.gapParams(row, 8))
+        row.addView(reveal)
+        row.addView(MobileUi.action(context, I18n.t("Копировать")) { (context as? Activity)?.let { ClipboardActions.copy(it, label.text.toString(), value.text.toString()) } }, LayoutParams(-1,-2))
+        row.addView(generator, LayoutParams(-1, -2))
+        row.addView(MobileUi.action(context, I18n.t("Удалить поле")) { rows.remove(entry); holder.removeView(row); label.text.clear(); value.text.clear() }.apply { MobileUi.danger(this) }, LayoutParams(-1, -2))
+        rows.add(entry); holder.addView(row, MobileUi.gapParams(row, 16))
+        if (field.label.isEmpty()) label.requestFocus()
     }
-    fun readFields():List<VaultField> = rows.map{
-        if(it.label.text.isBlank()){it.label.error=I18n.t("Укажите название поля");throw IllegalArgumentException("Field label required")}
-        VaultField(it.label.text.toString().trim(),it.value.text.toString())
+    private fun raw() = rows.map { VaultField(it.label.text.toString(), it.value.text.toString()) }
+    fun dirty() = raw() != initial
+    fun readFields(): List<VaultField> = rows.map {
+        if (it.label.text.isBlank()) { it.label.error = I18n.t("Укажите название поля"); throw IllegalArgumentException("Field label required") }
+        VaultField(it.label.text.toString().trim(), it.value.text.toString())
     }
-    fun clearFields(){rows.clear();holder.removeAllViews()}
+    fun clearFields() { rows.forEach { it.label.text.clear(); it.value.text.clear() }; rows.clear(); holder.removeAllViews() }
 }

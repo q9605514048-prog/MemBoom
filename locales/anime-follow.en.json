@@ -1,0 +1,19 @@
+{
+  "Обновления из YummyAnime": "Updates from YummyAnime",
+  "Проверить сейчас": "Check now",
+  "Настроить профиль": "Configure profile",
+  "Ссылка на публичный профиль": "Public profile URL",
+  "Автоматически обновлять раз в минуту": "Update automatically every minute",
+  "Проверка работает, пока сайт открыт. Статусы и избранное берутся из профиля; ваши заметки и прогресс сохраняются. Удаление на источнике не удаляет локальную запись.": "Updates run while the website is open. Statuses and favorites come from the profile; your notes and progress are kept. Removing an entry at the source does not delete your local record.",
+  "Подключить профиль": "Connect profile",
+  "Проверяем профиль…": "Checking profile…",
+  "Проверено в {0}. Добавлено: {1}, обновлено: {2}.": "Checked at {0}. Added: {1}, updated: {2}.",
+  "Не удалось обновить профиль. Локальная медиатека сохранена; повторим через минуту.": "Could not update the profile. Your local library is safe; retrying in a minute.",
+  "Нет сети. Автообновление продолжится после подключения.": "Offline. Automatic updates will resume when connected.",
+  "Проверка приостановлена, пока вкладка скрыта.": "Updates are paused while the tab is hidden.",
+  "Для автообновления нужен MemBoom API. Запустите локальный сервер или подключите свой HTTPS API в настройках синхронизации.": "Automatic updates require MemBoom API. Start the local server or connect your own HTTPS API in Sync settings.",
+  "Автообновление выключено.": "Automatic updates are off.",
+  "Подключите публичный профиль, чтобы следить за изменениями списков.": "Connect a public profile to follow changes to your lists.",
+  "Укажите публичный профиль вида https://yummyanime.tv/user/id123.": "Enter a public profile URL such as https://yummyanime.tv/user/id123.",
+  "Коллекция зашифрована в этом браузере. Для переноса используйте полную копию сайта. Нативные приложения не показывают мангу и аниме. Списки на исходных сайтах не изменяются.": "Your collection is encrypted in this browser. Use a full website backup to transfer it. The native apps do not show manga or anime. Lists on the source websites stay unchanged."
+}

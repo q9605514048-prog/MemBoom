@@ -10,6 +10,8 @@ A dark red-and-gold vault for accounts and notes. Store data locally, keep encry
 - **[Download the Android APK](https://github.com/q9605514048-prog/MemBoom/releases/latest/download/MemBoom-Android.apk)** — Android 8.0 or newer. Choose **Try without a server** after installation.
 - [All releases](https://github.com/q9605514048-prog/MemBoom/releases).
 
+The website and Android source now include the Explosion UI redesign. The downloadable Android APK remains v0.9.1 while the original signing key is being recovered; a compatible v0.10.0 update has not been published yet.
+
 The interface supports **English and Russian**. Use the language selector on the website, or **Settings → Language / Язык** on Android. Your choice is remembered. Account names, notes, passwords, and imported content are not translated.
 
 The website remembers entry by default after a successful unlock. Keep **Remember sign-in on this device** enabled to reopen without a password. **Lock** clears remembered entry; uncheck the option on shared devices. Anyone using the same browser profile can open a remembered vault. Clearing browser data also removes this setting.
@@ -26,6 +28,9 @@ This is a preview, not an independently audited password manager. Start with fic
 - A local mode that needs no account, registration, or server.
 - Optional registration and manual sync through your own MemBoom server.
 - Website only: manga and anime lists, statuses, progress, and import. Automatic cover loading requires your own API.
+- Website only: follow a public YummyAnime profile, with a check every minute while the vault is open. Source statuses and favorites update; local notes and episode progress are preserved. This requires a running MemBoom API.
+
+The Explosion interface includes a dashboard, desktop sidebar, mobile web navigation, account details with masked fields, dedicated backup/sync screens, and native Android detail screens. Encryption and the portable backup format are unchanged.
 
 Website data belongs to the current browser and origin; Android data belongs to the installed app. The public demo does not provide a shared account server or automatic cross-device sync.
 
